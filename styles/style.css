@@ -1,0 +1,68 @@
+/* styles.css */
+/* Main Background */
+div.st-emotion-cache-13k62yr.ee4bbma0 {
+    background-color: white;
+    color: black;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Header */
+header.st-emotion-cache-h4xjwg {
+    background: #f0f0f0;
+    color: black;
+}
+
+/* Main Page */
+div.st-emotion-cache-0.e1kosxz20 {
+    background-color: orange;
+}
+
+/* Download CSV Button */
+button.st-emotion-cache-b0y9n5.e1d5ycv52 {
+    background: green;
+    color: white;
+}
+
+/* Table */
+table.dataframe {
+    background: #f0f0f0;
+    color: black;
+    border-color: black;
+}
+
+table.dataframe th {
+    text-align: center;
+}
+
+.st-emotion-cache-1cvow4s th,
+.st-emotion-cache-1cvow4s td {
+    border-color: black;
+}
+
+.st-emotion-cache-1cvow4s {
+    font-size: 0.8rem;
+}
+
+/* Sidebar */
+section.st-emotion-cache-1wqrzgl.e1c29vlm0 {
+    background-color: grey;
+    color: black;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+div.st-emotion-cache-c0upsv.e1c29vlm14 {
+    background: black;
+}
+
+div.st-emotion-cache-17m6xoq.e1c29vlm16 {
+    background: black;
+}
+
+div.st-emotion-cache-1vsah7k.egexzqm0 {
+    color: white;
+}
+
+.st-expanderHeader {
+    font-size: 20px;
+    color: #0073e6;
+}
