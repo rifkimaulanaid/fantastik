@@ -1,13 +1,29 @@
 services:
   fantastik:
-    image: ${IMAGE_NAME}:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: ${IMAGE_NAME:-fantastik}:${IMAGE_TAG:-latest}
     container_name: ${CONTAINER_NAME:-fantastik}
+    hostname: fantastik
     restart: unless-stopped
+
     ports:
-      - "${APP_PORT:-8501}:8501"
+      - "127.0.0.1:${APP_PORT:-8501}:8501"
+
     environment:
       TZ: ${TZ:-Asia/Makassar}
       STREAMLIT_SERVER_HEADLESS: "true"
       STREAMLIT_SERVER_ADDRESS: "0.0.0.0"
       STREAMLIT_SERVER_PORT: "8501"
       STREAMLIT_BROWSER_GATHER_USAGE_STATS: "false"
+
+    networks:
+      fantastik_net:
+        aliases:
+          - fantastik
+
+networks:
+  fantastik_net:
+    name: fantastik_net
