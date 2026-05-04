@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+.git/
+.gitignore
+.github/
+.venv/
+venv/
+env/
+debug/
+.env
+.env.example
+.streamlit/secrets.toml
+DEPLOYMENT.md
+docker-compose.yml

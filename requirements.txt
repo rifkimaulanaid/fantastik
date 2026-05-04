@@ -1,0 +1,8 @@
+streamlit
+beautifulsoup4
+pandas
+requests
+selenium
+webdriver-manager
+openpyxl
+Pillow

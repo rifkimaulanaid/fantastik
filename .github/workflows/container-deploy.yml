@@ -1,0 +1,125 @@
+name: Container Build And Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: fantastik-production
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.meta.outputs.tags }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha,format=short,prefix=sha-
+          labels: |
+            org.opencontainers.image.title=Fantastik
+            org.opencontainers.image.description=Fantastik Bulungan Streamlit application
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+
+      - name: Build and push image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SERVER_SSH_KEY }}
+
+      - name: Add server host key
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.SERVER_SSH_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+          chmod 644 ~/.ssh/known_hosts
+
+      - name: Prepare deployment directory on server
+        shell: bash
+        run: |
+          set -euo pipefail
+          ssh -p "${{ secrets.SERVER_PORT }}" "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+            "mkdir -p '${{ secrets.SERVER_DEPLOY_PATH }}'"
+
+      - name: Upload deployment files
+        shell: bash
+        run: |
+          set -euo pipefail
+          scp -P "${{ secrets.SERVER_PORT }}" \
+            docker-compose.yml .env.example \
+            "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}:${{ secrets.SERVER_DEPLOY_PATH }}/"
+
+      - name: Deploy latest container on server
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [ -n "${{ secrets.GHCR_TOKEN }}" ]; then
+            printf '%s\n' "${{ secrets.GHCR_TOKEN }}" | ssh -p "${{ secrets.SERVER_PORT }}" \
+              "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" \
+              "docker login ghcr.io -u '${{ secrets.GHCR_USERNAME }}' --password-stdin"
+          fi
+
+          ssh -p "${{ secrets.SERVER_PORT }}" "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "bash -s" <<'EOF'
+          set -euo pipefail
+          cd "${{ secrets.SERVER_DEPLOY_PATH }}"
+
+          if [ ! -f .env ]; then
+            echo "File .env belum tersedia di server. Salin dari .env.example lalu sesuaikan nilainya." >&2
+            exit 1
+          fi
+
+          docker compose --env-file .env pull
+          docker compose --env-file .env up -d --remove-orphans
+          docker image prune -f
+          EOF
