@@ -128,11 +128,11 @@ def dataframe_to_excel_bytes(df, metadata=None, reports=None):
     info = workbook.create_sheet("Metadata")
     _append_text(info, ["Kunci", "Nilai"])
     details = {**(metadata or {}), "Jumlah baris ekspor": len(df), "Sel dipecah atau di-escape": modified,
-               "Aturan teks": "Gabungkan sel utama dan Teks Lanjutan berdasarkan baris/kolom/bagian. "
-                              "Escape: dua backslash mewakili satu backslash; satu backslash diikuti "
-                              "huruf u dan empat digit heksadesimal mewakili karakter XML tidak valid. "
-                              "Unduhan JSON menyimpan teks asli.",
-               "Ringkasan": "Kalimat awal artikel, bukan ringkasan semantik."}
+               "Aturan teks": "Untuk membaca teks lengkap, sambungkan sel utama dengan Teks Lanjutan "
+                              "sesuai nomor baris, kolom, dan bagian. Dua backslash berarti satu backslash. "
+                              "Satu backslash diikuti huruf u dan empat digit heksadesimal mewakili karakter "
+                              "yang tidak bisa ditulis langsung ke Excel. Teks aslinya ada di file JSON.",
+               "Ringkasan": "Diambil dari kalimat awal berita."}
     for key, value in details.items():
         text = _xml_text(json.dumps(value, ensure_ascii=True) if isinstance(value, (dict, list)) else value)
         for part in _parts(text):

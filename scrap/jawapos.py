@@ -11,6 +11,7 @@ from helper.content_cache import get_content, put_content
 from helper.helper_function import decode_response_text, is_blocked_response, normalize_article_text
 from helper.http_client import UnsafeURL, request, validate_url
 from helper.models import Budget, SourceResult, WorkStopped, validate_dates
+from helper.presentation import status_label
 
 API_URL = "https://api-jjmn.jawapos.com/api-jp-graphql/"
 QUERY = """
@@ -95,7 +96,7 @@ def parse_page(payload):
         raise SchemaError("Struktur daftar artikel berubah atau tidak tersedia.")
     paginator = search.get("paginatorInfo")
     if not isinstance(paginator, dict) or type(paginator.get("hasMorePages")) is not bool:
-        raise SchemaError("Informasi pagination tidak valid.")
+        raise SchemaError("Informasi halaman berikutnya tidak bisa dibaca.")
     articles, more = search["data"], paginator["hasMorePages"]
     if not articles and more:
         raise SchemaError("API memberi halaman kosong tetapi masih menyatakan ada halaman berikutnya.")
@@ -162,7 +163,7 @@ def scrape(publisher, start_date, end_date, progress_callback=None, *, budget=No
             signature = tuple(str(item.get("article_id") or item.get("id")) if isinstance(item, dict)
                               else repr(item) for item in articles)
             if signature and signature in page_signatures:
-                raise WorkStopped("REPEATED_PAGE", "API mengulang halaman yang sama; proses dihentikan.")
+                raise WorkStopped("REPEATED_PAGE", "Sumber mengirim halaman yang sama lagi. Proses dihentikan.")
             page_signatures.add(signature)
             result.pages = current
             new_ids = 0
@@ -224,5 +225,5 @@ def scrape(publisher, start_date, end_date, progress_callback=None, *, budget=No
     if checkpoint:
         checkpoint(result)
     if progress_callback:
-        progress_callback(1.0, f"Selesai ({result.status}): {len(result.rows)} artikel.")
+        progress_callback(1.0, f"Selesai: {len(result.rows)} berita ({status_label(result.status).lower()}).")
     return result

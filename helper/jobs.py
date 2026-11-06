@@ -60,11 +60,11 @@ def load_checkpoint(path):
 def _load_checkpoint(path):
     path = Path(path)
     if path.stat().st_size > 256 * 1024 * 1024:
-        raise ValueError("Checkpoint terlalu besar.")
+        raise ValueError("File hasil tersimpan terlalu besar untuk dibuka.")
     result = json.loads(path.read_text(encoding="utf-8"))
     if (not isinstance(result, dict) or not isinstance(result.get("data"), list)
             or not isinstance(result.get("reports"), list) or not isinstance(result.get("metadata"), dict)):
-        raise ValueError("Struktur checkpoint tidak valid.")
+        raise ValueError("Format file hasil tersimpan tidak bisa dibaca.")
     if result["metadata"].get("state") == "running":
         result["metadata"]["state"] = "interrupted"
         for report in result["reports"]:
@@ -90,7 +90,7 @@ class ScrapeJob:
         if self._started:
             raise RuntimeError("Proses ini sudah pernah dimulai.")
         if not _slots.acquire(blocking=False):
-            raise RuntimeError("Dua proses sedang berjalan. Coba kembali setelah salah satunya selesai.")
+            raise RuntimeError("Ada dua pencarian yang masih berjalan. Tunggu salah satunya selesai, lalu coba lagi.")
         try:
             self._started = True
             threading.Thread(target=self._run, daemon=True, name=f"scrape-{self.run_id[:8]}").start()
@@ -111,7 +111,7 @@ class ScrapeJob:
                 save_checkpoint(result, self.store)
                 self._last_save = now
             except OSError as error:
-                self.storage_error = f"Checkpoint disk gagal: {type(error).__name__}. Hasil masih tersedia di sesi."
+                self.storage_error = f"Hasil belum bisa disimpan di perangkat ({type(error).__name__}). Datanya masih tersedia di halaman ini."
 
     def snapshot(self):
         with self.lock:

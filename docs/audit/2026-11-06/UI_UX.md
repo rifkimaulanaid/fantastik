@@ -1,10 +1,10 @@
 # Tinjauan UI/UX — 6 November 2026
 
-> Snapshot sebelum penyempurnaan UI. Perbaikan dan hasil pengujian terbaru tersedia pada [UI_UX_REMEDIATION.md](UI_UX_REMEDIATION.md); screenshot di direktori `uiux/` tetap menjadi bukti kondisi awal.
+> Ini catatan tampilan sebelum perbaikan. Hasil perbaikannya ada di [UI_UX_REMEDIATION.md](UI_UX_REMEDIATION.md). Screenshot di folder `uiux/` menunjukkan kondisi saat pemeriksaan awal.
 
-Alur aplikasi sudah lebih andal setelah perbaikan pipeline, tetapi antarmuka masih perlu disempurnakan untuk pekerjaan harian. Prioritas tertinggi adalah keterbacaan tanggal dan akses cepat ke hasil.
+Proses pencarian sudah lebih baik, tetapi tampilan masih menyulitkan beberapa pekerjaan sehari-hari. Yang paling mendesak: angka tanggal harus mudah dibaca dan tabel hasil jangan terlalu jauh di bawah.
 
-Pemeriksaan menggunakan Chrome headless lokal, viewport desktop 1440 × 900 dan ponsel 390 × 844, dengan data sintetis 40 artikel serta tiga status sumber. Tidak menjalankan scraping atau mengubah kode UI pada tinjauan ini. Ukuran viewport ponsel bukan pengujian perangkat fisik. Tidak ditemukan exception JavaScript pada ketiga skenario yang diperiksa; ini bukan audit aksesibilitas menyeluruh.
+Pemeriksaan menggunakan Chrome headless lokal, viewport desktop 1440 × 900 dan ponsel 390 × 844, dengan data contoh 40 artikel serta tiga status sumber. Tidak menjalankan scraping atau mengubah kode UI pada tinjauan ini. Ukuran viewport ponsel bukan pengujian perangkat fisik. Tidak ditemukan exception JavaScript pada ketiga skenario yang diperiksa; ini bukan audit aksesibilitas menyeluruh.
 
 ## Temuan prioritas
 
@@ -20,20 +20,20 @@ Pemeriksaan menggunakan Chrome headless lokal, viewport desktop 1440 × 900 dan 
 
 Kontras teks normal setidaknya 4,5:1 merupakan acuan [WCAG 2.2 — Contrast Minimum](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html). Angka di atas dihitung dari computed style browser, bukan perkiraan warna screenshot. Tidak ada overflow horizontal pada kontainer utama dalam dua viewport tersebut; tabel sendiri boleh memerlukan pengguliran dua dimensi, sesuai pengecualian yang dijelaskan pada [WCAG — Reflow](https://www.w3.org/WAI/WCAG22/Understanding/reflow.html).
 
-## Yang sudah membantu pengguna
+## Yang sudah berjalan baik
 
 - Status lengkap/parsial/gagal terlihat dan dilengkapi rincian kendala.
 - Proses dapat dibatalkan; hasil sebelumnya dan hasil parsial dapat dipertahankan.
 - Pencarian literal, satu detail sesuai pilihan, serta ekspor atas permintaan mengurangi galat dan pekerjaan yang tidak diperlukan.
 - Identitas warna dan logo sudah konsisten, sehingga perbaikan dapat dilakukan tanpa mengganti framework atau identitas aplikasi.
 
-## Urutan penyempurnaan
+## Urutan perbaikan
 
 1. Perbaiki kontras tanggal dan pemeriksaan keyboard/fokus pada seluruh filter.
 2. Ringkas header, panduan, dan status; tempatkan hasil/pencarian lebih tinggi.
 3. Rapikan filter ponsel, label, konteks hasil aktif, serta keadaan kosong/unduhan berubah.
 4. Perbaiki tampilan baca berita dan navigasinya.
-5. Verifikasi screenshot desktop/ponsel, lebar 320 px, zoom, navigasi keyboard, dan tema yang didukung. Tes AppTest sebelumnya memverifikasi perilaku, tetapi tidak menangkap regresi warna CSS ini.
+5. Verifikasi screenshot desktop/ponsel, lebar 320 px, zoom, navigasi keyboard, dan tema yang didukung. Tes AppTest sebelumnya memeriksa perilaku, tetapi tidak menangkap regresi warna CSS ini.
 
 ## Bukti
 

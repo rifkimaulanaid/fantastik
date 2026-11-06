@@ -82,7 +82,7 @@ def inspect(browser, base_url, output, name, width, height, *, results=False, pr
     (output / f"{name}.aria.txt").write_text(page.locator("body").aria_snapshot(), encoding="utf-8")
     if name in {"desktop-results", "mobile-results", "narrow-results"}:
         # Click the visible text label: the native radio input is visually covered.
-        label = page.get_by_text("Detail", exact=True)
+        label = page.get_by_role("radiogroup", name="Tampilan hasil", exact=True).get_by_text("Detail", exact=True)
         assert label.count() == 1
         label.click()
         page.get_by_text("Pilih berita", exact=True).wait_for()

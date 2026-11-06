@@ -36,7 +36,7 @@ def preset_dates(preset, today):
 
 
 def status_label(status):
-    return {"success": "Lengkap", "partial": "Parsial", "failed": "Gagal"}.get(status, "Belum lengkap")
+    return {"success": "Lengkap", "partial": "Sebagian", "failed": "Gagal"}.get(status, "Belum lengkap")
 
 
 def source_cards(reports):

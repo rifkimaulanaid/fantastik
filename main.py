@@ -23,7 +23,7 @@ ROOT = Path(__file__).resolve().parent
 def render_app_header():
     st.markdown(
         '<header class="app-header"><div><span class="eyebrow">Fenomena Statistik Kabupaten Bulungan</span>'
-        '<h1>Fantastik Bulungan</h1><p>Berita lokal untuk membaca fenomena daerah.</p></div>'
+        '<h1>Fantastik Bulungan</h1><p>Kumpulkan dan cari berita dari media lokal.</p></div>'
         '<span class="brand-mark" aria-hidden="true">F.</span></header>',
         unsafe_allow_html=True,
     )
@@ -68,16 +68,16 @@ def monitor_job():
     fraction, note, result = job.snapshot()
     st.progress(fraction, text=note)
     if result:
-        st.caption(f"{len(result['data'])} berita diperoleh. Hasil disimpan bertahap.")
+        st.caption(f"{len(result['data'])} berita sudah terkumpul. Hasilnya disimpan otomatis.")
     if job.storage_error:
-        st.warning("Hasil belum dapat disimpan pada perangkat. Data tetap tersedia dalam sesi ini.")
+        st.warning("Hasil belum bisa disimpan di perangkat. Beritanya masih bisa dibaca di sini.")
         st.text(job.storage_error)
     if not job.done.is_set():
         if st.button("Batalkan proses", disabled=job.cancel.is_set(), key="cancel_job"):
             job.cancel.set()
             st.rerun()
         if job.cancel.is_set():
-            st.caption("Pembatalan diminta. Menunggu pengambilan halaman yang sedang berlangsung selesai.")
+            st.caption("Sedang menghentikan proses. Berita yang sudah terkumpul tetap tersedia.")
         return
     st.session_state.last_attempt = result
     st.session_state.last_job_error = job.error or job.storage_error
@@ -90,12 +90,12 @@ def monitor_job():
 def render_sidebar():
     with st.sidebar:
         st.image(str(ROOT / "asset/Fantastik_Logo_Teks.png"), width=132)
-        st.caption("Pantau berita lokal, telaah fenomena, dan simpan hasilnya.")
+        st.caption("Cari berita lokal dan unduh hasilnya.")
         with st.expander("Panduan singkat"):
-            st.write("1. Buka **Kumpulkan berita** dan pilih tanggal serta sumber.")
-            st.write("2. Cari berita melalui tabel atau baca pada tampilan Detail.")
-            st.write("3. Pilih Unduh dan siapkan berkas sesuai filter hasil.")
-            st.caption("Hasil parsial berarti sebagian berita atau sumber belum berhasil dikumpulkan.")
+            st.write("1. Buka **Kumpulkan berita**, lalu pilih tanggal dan sumber media.")
+            st.write("2. Cari berita di tabel. Untuk membaca isinya, pilih **Detail**.")
+            st.write("3. Buka **Unduh**, lalu klik **Siapkan unduhan**.")
+            st.caption("Label Belum lengkap berarti masih ada sumber atau isi berita yang belum berhasil diambil.")
         history = st.session_state.get("run_history", [])
         if history:
             with st.expander("Hasil sebelumnya"):
@@ -107,22 +107,22 @@ def render_sidebar():
                     adopt_result(history[selected])
         files = list_checkpoints(DEFAULT_STORE)[:20]
         if files:
-            with st.expander("Hasil tersimpan di perangkat"):
+            with st.expander("Hasil yang sudah disimpan"):
                 def file_label(path):
                     try:
                         stamp = datetime.fromtimestamp(path.stat().st_mtime, BUSINESS_ZONE)
                         return f"{human_time(stamp)} ({stamp:%S} detik)"
                     except OSError:
-                        return "Berkas tidak tersedia"
+                        return "File tidak ditemukan"
 
                 path = st.selectbox("Pilih hasil tersimpan", files, format_func=file_label, key="saved_selection")
-                if st.button("Pulihkan hasil tersimpan"):
+                if st.button("Buka hasil tersimpan"):
                     try:
                         adopt_result(load_checkpoint(path))
                     except (OSError, ValueError, KeyError) as error:
-                        st.error("Hasil tersimpan belum dapat dibuka.")
+                        st.error("Hasil yang disimpan belum bisa dibuka.")
                         st.text(str(error))
-                st.caption("Pemulihan membuka data yang sudah tersimpan dan tidak mengulang pengumpulan berita.")
+                st.caption("Ini membuka hasil yang sudah disimpan, tanpa mengambil berita lagi.")
 
 
 def render_collection_filters():
@@ -135,7 +135,7 @@ def render_collection_filters():
     busy = st.session_state.get("job") is not None
     expanded = st.session_state.get("active_result") is None and not busy
     with st.expander("Kumpulkan berita", expanded=expanded, key="collection_panel"):
-        st.caption("Filter pengambilan: menentukan berita baru yang akan dikumpulkan.")
+        st.caption("Pilih tanggal berita dan media yang ingin dicari.")
         with st.container(horizontal=True, vertical_alignment="bottom", key="collection_dates"):
             st.selectbox("Rentang tanggal", ["Hari ini", "7 hari", "30 hari", "Atur tanggal"],
                          key="date_preset", on_change=change_preset, disabled=busy, width="stretch")
@@ -152,10 +152,10 @@ def render_collection_filters():
             validation = str(error)
             st.error(validation)
         if not sources:
-            st.info("Pilih setidaknya satu sumber media untuk mulai mengumpulkan berita.")
+            st.info("Pilih minimal satu sumber media dulu.")
         clicked = st.button("Kumpulkan berita", key="collect_news", type="primary", width="stretch",
                             disabled=busy or bool(validation) or not sources)
-        st.caption("Maksimal 31 hari setiap pengambilan. Proses dapat dibatalkan dan hasil yang sudah diperoleh tetap disimpan.")
+        st.caption("Bisa mencari sampai 31 hari sekaligus. Kalau dibatalkan, berita yang sudah terkumpul tetap disimpan.")
         if clicked:
             try:
                 job = ScrapeJob(start, end, sources)
@@ -173,7 +173,7 @@ def render_status_reports(reports):
 
 
 def render_diagnostics(result):
-    details = st.expander("Rincian pengambilan dan kendala", on_change="rerun", key="source_details")
+    details = st.expander("Detail proses", on_change="rerun", key="source_details")
     if not details.open:
         return
     with details:
@@ -184,8 +184,8 @@ def render_diagnostics(result):
                 st.text(report["message"])
             if report.get("issues"):
                 st.dataframe(pd.DataFrame(report["issues"]), hide_index=True, width="stretch")
-        st.caption("Batas per sumber: 200 halaman, 1.000 entri, 8 juta karakter isi, dan target durasi 3 menit. "
-                   "Pembatalan diperiksa di antara operasi pengambilan halaman.")
+        st.caption("Setiap sumber dibatasi sampai 200 halaman, 1.000 entri, 8 juta karakter isi, dan sekitar 3 menit. "
+                   "Saat dibatalkan, aplikasi menunggu pembacaan halaman yang sedang berjalan selesai.")
         st.json(result["metadata"], expanded=False)
 
 
@@ -211,21 +211,21 @@ def render_article(shown):
     st.text(f"{record.get('Sumber', '-')} | Kategori: {record.get('Tagar', '-')} | {human_date(record.get('Tanggal'))}")
     if record.get("Ringkasan"):
         with st.container(key="article_summary"):
-            st.caption("Sekilas berita - kalimat awal artikel")
+            st.caption("Cuplikan dari awal berita")
             st.text(record["Ringkasan"])
     if record.get("Isi"):
         st.markdown(article_html(None, record["Isi"]), unsafe_allow_html=True)
     else:
-        st.warning("Isi berita belum berhasil diambil. Periksa rincian kendala atau buka artikel sumber.")
+        st.warning("Isi berita belum bisa diambil. Coba buka artikel sumber, atau lihat penyebabnya di Detail proses.")
     try:
         st.link_button("Buka artikel sumber", validate_url(record.get("Tautan")))
     except UnsafeURL:
-        st.caption("Tautan artikel tidak tersedia.")
+        st.caption("Tautan berita tidak tersedia.")
 
 
 def render_downloads(filtered, result, keyword, categories):
-    st.write(f"Unduh **{len(filtered)} berita** sesuai filter hasil saat ini.")
-    st.caption("Excel menyertakan keterangan pengambilan dan kendala sumber. JSON menyimpan data lengkap untuk diolah kembali.")
+    st.write(f"Ada **{len(filtered)} berita** yang bisa diunduh dari hasil yang sedang tampil.")
+    st.caption("Pilih Excel untuk dibaca sebagai tabel, atau JSON kalau datanya ingin diolah lagi.")
     export_meta = dict(result["metadata"], filter_keyword=keyword, filter_categories=categories,
                        exported_rows=len(filtered))
     payload = json.dumps(dict(data=filtered.to_dict("records"), metadata=export_meta,
@@ -233,24 +233,24 @@ def render_downloads(filtered, result, keyword, categories):
     signature = hashlib.sha256(payload.encode()).hexdigest()
     cache = st.session_state.get("export_cache")
     if cache and cache["signature"] != signature:
-        st.info("Filter hasil berubah. Siapkan ulang unduhan agar berkas mengikuti hasil yang sedang ditampilkan.")
+        st.info("Filter sudah berubah. Siapkan ulang unduhan supaya isinya sesuai dengan hasil yang sekarang.")
     if st.button("Siapkan unduhan", key="prepare_download", type="primary", disabled=filtered.empty):
         try:
-            with st.spinner("Menyiapkan berkas unduhan..."):
+            with st.spinner("Sedang menyiapkan file..."):
                 excel = dataframe_to_excel_bytes(build_export_dataframe(filtered), export_meta, result["reports"])
             cache = dict(signature=signature, excel=excel, json=payload.encode())
             st.session_state.export_cache = cache
         except Exception as error:
-            st.error("Berkas belum dapat disiapkan. Hasil berita tetap tersedia.")
-            st.caption(f"Kode kendala: {type(error).__name__}")
+            st.error("File belum bisa dibuat. Beritanya masih bisa dibaca di tabel.")
+            st.caption(f"Kode error: {type(error).__name__}")
     if cache and cache["signature"] == signature:
         with st.container(horizontal=True):
             st.download_button("Unduh Excel", cache["excel"], "fantastik.xlsx",
                                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", on_click="ignore")
             st.download_button("Unduh JSON lengkap", cache["json"], "fantastik.json", "application/json", on_click="ignore")
-    with st.expander("Tentang format unduhan"):
-        st.write("Teks panjang dalam Excel dilanjutkan pada sheet Teks Lanjutan. Cara membacanya dan "
-                 "penulisan karakter khusus dijelaskan pada sheet Metadata. JSON mempertahankan teks asli.")
+    with st.expander("Apa isi file unduhannya?"):
+        st.write("Kalau isi berita terlalu panjang untuk satu sel Excel, lanjutannya ada di sheet Teks Lanjutan. "
+                 "Petunjuk membacanya ada di sheet Metadata. File JSON menyimpan teks aslinya.")
 
 
 def render_results(result):
@@ -268,7 +268,10 @@ def render_results(result):
     )
     render_status_reports(result["reports"])
     if not result["data"]:
-        st.info("Tidak ada berita pada rentang yang berhasil diperiksa. Coba tanggal atau sumber lain melalui Kumpulkan berita.")
+        if complete:
+            st.info("Tidak ada berita pada tanggal yang dipilih. Coba ganti tanggal atau sumber di Kumpulkan berita.")
+        else:
+            st.info("Belum ada berita yang berhasil diambil. Lihat penyebabnya di Detail proses.")
         render_diagnostics(result)
         return
     df = pd.DataFrame(result["data"])
@@ -293,7 +296,7 @@ def render_results(result):
     )
     view = st.radio("Tampilan hasil", ["Tabel", "Detail", "Unduh"], horizontal=True, key="result_view", label_visibility="collapsed")
     if shown.empty:
-        st.info("Tidak ada berita yang cocok. Ubah kata kunci/kategori atau pilih Hapus filter.")
+        st.info("Tidak ada berita yang cocok. Coba kata kunci lain, ganti kategori, atau klik Hapus filter.")
     if view == "Tabel" and not shown.empty:
         display_columns = [c for c in ["Judul", "Tanggal", "Sumber", "Tagar", "Ringkasan", "Status Isi", "Tautan"] if c in shown]
         safe = shown[display_columns].copy()
@@ -325,24 +328,24 @@ def main():
     render_collection_filters()
     monitor_job()
     if st.session_state.get("last_job_error"):
-        st.error("Pengambilan terbaru mengalami kendala. Data yang sudah tersedia tetap dipertahankan.")
-        with st.expander("Rincian kendala proses"):
+        st.error("Pencarian terbaru bermasalah. Berita yang sudah terkumpul masih tersedia.")
+        with st.expander("Lihat error proses"):
             st.text(st.session_state.last_job_error)
     active = st.session_state.get("active_result")
     attempt = st.session_state.get("last_attempt")
     if attempt and active != attempt and not attempt.get("data"):
-        st.warning("Pengambilan terbaru belum berhasil. Anda sedang melihat hasil sebelumnya.")
-        with st.expander("Status pengambilan terbaru"):
+        st.warning("Pencarian terbaru belum berhasil. Yang tampil di bawah adalah hasil sebelumnya.")
+        with st.expander("Lihat status pencarian terbaru"):
             render_status_reports(attempt["reports"])
             for report in attempt["reports"]:
                 if report.get("message"):
                     st.text(report["message"])
     if active:
         if st.session_state.get("job"):
-            st.caption("Pengambilan baru sedang berlangsung. Hasil di bawah berasal dari pengambilan sebelumnya.")
+            st.caption("Sedang mencari berita baru. Sambil menunggu, hasil sebelumnya masih bisa dibaca di bawah.")
         render_results(active)
     elif not st.session_state.get("job"):
-        st.info("Pilih tanggal dan sumber pada Kumpulkan berita untuk mulai. Hasil akan tampil di sini.")
+        st.info("Mulai dari Kumpulkan berita di atas. Pilih tanggal dan sumber, lalu hasilnya akan muncul di sini.")
 
 
 if __name__ == "__main__":

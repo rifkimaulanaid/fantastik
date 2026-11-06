@@ -17,7 +17,7 @@ def validate_dates(start_date, end_date):
     if not isinstance(start_date, date) or not isinstance(end_date, date):
         raise ValueError("Tanggal tidak valid.")
     if start_date > end_date:
-        raise ValueError("Tanggal awal tidak boleh lebih dari tanggal akhir.")
+        raise ValueError("Tanggal awal harus sama dengan atau sebelum tanggal akhir.")
     if (end_date - start_date).days >= MAX_DATE_DAYS:
         raise ValueError(f"Rentang tanggal maksimal {MAX_DATE_DAYS} hari per proses.")
 
@@ -38,25 +38,25 @@ class Budget:
 
     def check(self):
         if self.cancel is not None and self.cancel.is_set():
-            raise WorkStopped("CANCELLED", "Proses dibatalkan; hasil yang telah diperoleh dipertahankan.")
+            raise WorkStopped("CANCELLED", "Proses dibatalkan. Berita yang sudah terkumpul tetap disimpan.")
         if time.monotonic() >= self.deadline:
-            raise WorkStopped("TIME_LIMIT", "Batas durasi sumber tercapai.")
+            raise WorkStopped("TIME_LIMIT", "Waktu pencarian untuk sumber ini sudah habis.")
 
     def page(self, number):
         self.check()
         if number > self.max_pages:
-            raise WorkStopped("PAGE_LIMIT", "Batas halaman tercapai sebelum pengumpulan lengkap.")
+            raise WorkStopped("PAGE_LIMIT", "Batas jumlah halaman sudah tercapai. Hasilnya belum lengkap.")
 
     def article(self, count):
         self.check()
         if count >= self.max_articles:
-            raise WorkStopped("ARTICLE_LIMIT", "Batas artikel tercapai sebelum pengumpulan lengkap.")
+            raise WorkStopped("ARTICLE_LIMIT", "Batas jumlah berita sudah tercapai. Hasilnya belum lengkap.")
 
     def add_text(self, text):
         self.check()
         self.characters += len(text or "")
         if self.characters > self.max_characters:
-            raise WorkStopped("TEXT_LIMIT", "Batas total ukuran isi artikel tercapai.")
+            raise WorkStopped("TEXT_LIMIT", "Isi berita yang terkumpul sudah mencapai batas ukuran.")
 
 
 @dataclass

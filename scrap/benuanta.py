@@ -8,6 +8,7 @@ from helper.content_cache import get_content, put_content
 from helper.helper_function import decode_response_text, fetch_page, is_blocked_response, normalize_article_text, translate_date
 from helper.http_client import validate_url
 from helper.models import Budget, SourceResult, WorkStopped, validate_dates
+from helper.presentation import status_label
 
 HOSTS = frozenset({"benuanta.co.id", "www.benuanta.co.id"})
 CONTENT_STOP_PREFIXES = ("Reporter:", "Editor:", "Baca juga:", "BACA JUGA:")
@@ -30,7 +31,7 @@ def extract_benuanta_content(url, budget=None):
     soup = BeautifulSoup(html, "html.parser")
     node = soup.select_one(".entry-content")
     if not node:
-        raise ValueError("Selector isi artikel tidak ditemukan.")
+        raise ValueError("Bagian isi berita tidak ditemukan di halaman sumber.")
     paragraphs = []
     for paragraph in node.find_all("p"):
         text = " ".join(paragraph.get_text(" ", strip=True).split())
@@ -100,7 +101,7 @@ def benuanta_scrap(start_date, end_date, max_page=200, progress_callback=None, *
                     seen.add(url)
                     category = article.find("span", class_="gmr-meta-topic")
                     if len(heading.get_text()) > 2000 or (category and len(category.get_text()) > 200):
-                        raise ValueError("Metadata artikel melebihi batas ukuran.")
+                        raise ValueError("Judul atau kategori berita terlalu panjang.")
                     record = {"ID Artikel": url, "Judul": heading.get_text(" ", strip=True),
                               "Tagar": category.get_text(" ", strip=True) if category else "Tanpa kategori",
                               "Tanggal": published.isoformat(), "Sumber": "Benuanta", "Tautan": url,
@@ -141,5 +142,5 @@ def benuanta_scrap(start_date, end_date, max_page=200, progress_callback=None, *
     if checkpoint:
         checkpoint(result)
     if progress_callback:
-        progress_callback(1.0, f"Selesai ({result.status}): {len(result.rows)} artikel.")
+        progress_callback(1.0, f"Selesai: {len(result.rows)} berita ({status_label(result.status).lower()}).")
     return result
