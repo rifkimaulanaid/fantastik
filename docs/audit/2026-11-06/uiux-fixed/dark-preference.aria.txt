@@ -1,0 +1,49 @@
+- link "Skip to main content":
+  - /url: "#stMain"
+- region "Sidebar":
+  - button "Fullscreen"
+  - img
+  - paragraph: Pantau berita lokal, telaah fenomena, dan simpan hasilnya.
+  - group:
+    - paragraph: Panduan singkat
+- banner:
+  - button "Expand sidebar"
+- main:
+  - text: Fenomena Statistik Kabupaten Bulungan
+  - heading "Fantastik Bulungan" [level=1]:
+    - text: Fantastik Bulungan
+    - link "Link to heading":
+      - /url: "#fantastik-bulungan"
+  - paragraph: Berita lokal untuk membaca fenomena daerah.
+  - group:
+    - paragraph: Kumpulkan berita
+    - paragraph: "Filter pengambilan: menentukan berita baru yang akan dikumpulkan."
+    - group:
+      - combobox "Rentang tanggal": Hari ini
+      - button "Open"
+    - group "Tanggal awal":
+      - spinbutton "day, Tanggal awal": "06"
+      - spinbutton "month, Tanggal awal": "11"
+      - spinbutton "year, Tanggal awal": "2026"
+    - button "Choose date"
+    - group "Tanggal akhir":
+      - spinbutton "day, Tanggal akhir": "06"
+      - spinbutton "month, Tanggal akhir": "11"
+      - spinbutton "year, Tanggal akhir": "2026"
+    - button "Choose date"
+    - group:
+      - group "Selected values":
+        - text: Benuanta
+        - button "Remove Benuanta"
+        - text: Prokal
+        - button "Remove Prokal"
+        - text: Radar Tarakan
+        - button "Remove Radar Tarakan"
+      - combobox "Sumber media"
+      - button "Clear all"
+      - button "Open"
+    - button "Kumpulkan berita":
+      - paragraph: Kumpulkan berita
+    - paragraph: Maksimal 31 hari setiap pengambilan. Proses dapat dibatalkan dan hasil yang sudah diperoleh tetap disimpan.
+  - status:
+    - paragraph: Pilih tanggal dan sumber pada Kumpulkan berita untuk mulai. Hasil akan tampil di sini.

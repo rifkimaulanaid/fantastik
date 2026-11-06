@@ -1,0 +1,88 @@
+- link "Skip to main content":
+  - /url: "#stMain"
+- region "Sidebar":
+  - button "Fullscreen"
+  - img
+  - heading "Filter Scraping" [level=2]
+  - group "Tanggal Awal":
+    - spinbutton "day, Tanggal Awal": "06"
+    - spinbutton "month, Tanggal Awal": "11"
+    - spinbutton "year, Tanggal Awal": "2026"
+  - button "Choose date"
+  - group "Tanggal Akhir":
+    - spinbutton "day, Tanggal Akhir": "06"
+    - spinbutton "month, Tanggal Akhir": "11"
+    - spinbutton "year, Tanggal Akhir": "2026"
+  - button "Choose date"
+  - group:
+    - combobox "Sumber Media"
+    - button "Open"
+  - button "Proses":
+    - paragraph: Proses
+  - paragraph: Maksimal 31 hari, 200 halaman, 1.000 artikel, dan 3 menit per sumber. Proses dapat dibatalkan; hasil parsial dipertahankan.
+- banner:
+  - button "Deploy"
+  - button "Main menu"
+- main:
+  - text: Fenomena Statistik Kabupaten Bulungan
+  - heading "Fantastik Bulungan" [level=1]:
+    - text: Fantastik Bulungan
+    - link "Link to heading":
+      - /url: "#fantastik-bulungan"
+  - paragraph: Kumpulkan berita lokal dari beberapa portal media untuk mendukung pemantauan fenomena statistik menurut waktu, kategori, dan isi berita.
+  - text: Benuanta Prokal Radar Tarakan
+  - heading "Alur Singkat" [level=3]:
+    - text: Alur Singkat
+    - link "Link to heading":
+      - /url: "#alur-singkat"
+  - list:
+    - listitem: Tentukan tanggal awal dan tanggal akhir di sidebar.
+    - listitem: Pilih satu atau beberapa sumber media aktif.
+    - listitem: Jalankan proses scraping lalu telaah hasil pada tabel dan detail berita.
+    - listitem: Unduh hasil akhir dalam format Excel jika diperlukan.
+  - paragraph: "Hasil contoh-a | Tanggal diminta: 2026-11-01 s.d. 2026-11-06 | Waktu pengambilan: 2026-11-06T10:00:00+08:00 | Zona: Asia/Makassar"
+  - alert:
+    - paragraph: Hasil ini belum lengkap. Periksa status dan rincian kendala setiap sumber sebelum digunakan.
+  - heading "Status Sumber" [level=3]:
+    - text: Status Sumber
+    - link "Link to heading":
+      - /url: "#status-sumber"
+  - status:
+    - paragraph: "Prokal ? Lengkap: 40 artikel; 0 tanpa isi; 2 halaman."
+  - alert:
+    - paragraph: "Benuanta ? Gagal: 0 artikel; 0 tanpa isi; 0 halaman."
+  - text: Pengambilan sumber gagal (HTTP 503).
+  - group:
+    - paragraph: Rincian kendala Benuanta
+  - status:
+    - paragraph: "Radar Tarakan ? Lengkap: 0 artikel; 0 tanpa isi; 0 halaman."
+  - textbox "Cari kata kunci dalam Judul, Kategori, atau Isi":
+    - /placeholder: ""
+  - group:
+    - combobox "Filter kategori"
+    - button "Open"
+  - paragraph: Total Berita
+  - paragraph: "40"
+  - paragraph: Sumber Aktif
+  - paragraph: "1"
+  - paragraph: Kategori
+  - paragraph: "3"
+  - radiogroup "Tampilan hasil":
+    - radio "Tabel"
+    - paragraph: Tabel
+    - radio "Detail" [checked]
+    - paragraph: Detail
+    - radio "Unduh"
+    - paragraph: Unduh
+  - group:
+    - combobox "Pilih berita": "06-11-2026 | Berita contoh 1: Perkembangan kegiatan ekonomi daerah dan usaha masyarakat"
+    - button "Open"
+  - text: "Sumber: Prokal | Kategori: Ekonomi"
+  - paragraph: Ringkasan berupa kalimat awal artikel.
+  - text: Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka.
+  - link "Buka artikel sumber":
+    - /url: https://www.prokal.co/ekonomi/123/berita-contoh
+    - paragraph: Buka artikel sumber
+  - paragraph:
+    - strong: Isi Berita
+  - text: Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka. Ini teks contoh untuk pemeriksaan antarmuka.

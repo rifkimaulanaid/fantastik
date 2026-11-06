@@ -3,5 +3,12 @@ __pycache__/
 *$py.class
 
 .env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+.release.env
+.previous-release.env
+data/
+test-results/
 .venv/
 venv/

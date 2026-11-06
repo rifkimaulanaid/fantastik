@@ -1,13 +1,7 @@
 import pandas as pd
-import requests
-import time
 import re
 
-SESSION = requests.Session()
-SESSION.headers.update({
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-    "Accept-Language": "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7",
-})
+from helper.http_client import request
 
 BLOCKED_RESPONSE_MARKERS = (
     "<title>tribunnews.com - 403</title>",
@@ -22,21 +16,9 @@ def get_date_range(start_date, end_date):
     return pd.date_range(start_date, end_date).strftime('%d-%m-%Y').tolist()
 
 # Fetch Page
-def fetch_page(url, retries=3, delay=2, timeout=10):
-    """Fetch a webpage with retry logic and timeout"""
-    for attempt in range(1, retries + 1):
-        try:
-            response = SESSION.get(url, timeout=timeout)
-            response.raise_for_status()
-            if not response.encoding or response.encoding.lower() == "iso-8859-1":
-                response.encoding = response.apparent_encoding or response.encoding
-            return response
-        except requests.exceptions.RequestException as e:
-            if attempt < retries:
-                time.sleep(delay)
-            else:
-                print(f"[ERROR] Failed to fetch {url} after {retries} retries: {e}")
-    return None
+def fetch_page(url, retries=2, delay=2, timeout=15, **kwargs):
+    """Fetch through the shared safe transport; failures are never empty results."""
+    return request("GET", url, retries=retries, timeout=timeout, **kwargs)
 
 
 def decode_response_text(response):
@@ -84,7 +66,7 @@ def translate_date(raw_date):
 
 
 def normalize_article_text(paragraphs_or_text):
-    """Normalize article content into a single-line text block for storage/export."""
+    """Normalize whitespace inside paragraphs without discarding their boundaries."""
     if paragraphs_or_text is None:
         return None
 
@@ -94,96 +76,26 @@ def normalize_article_text(paragraphs_or_text):
             for part in paragraphs_or_text
             if str(part).strip()
         ]
-        text = " ".join(normalized_parts)
+        text = "\n\n".join(normalized_parts)
     else:
-        text = re.sub(r"\s+", " ", str(paragraphs_or_text)).strip()
+        paragraphs = re.split(r"\n\s*\n", str(paragraphs_or_text))
+        text = "\n\n".join(re.sub(r"\s+", " ", paragraph).strip() for paragraph in paragraphs if paragraph.strip())
 
     return text or None
 
 def build_web_driver():
-    """Build a reusable headless Chrome driver."""
-    try:
-        from selenium import webdriver
-        from selenium.common.exceptions import NoSuchDriverException
-        from selenium.webdriver.chrome.service import Service
-    except ModuleNotFoundError as e:
-        raise RuntimeError(
-            "Selenium belum tersedia. Install dengan `python -m pip install selenium webdriver-manager`."
-        ) from e
+    """The inactive Tribun browser adapter has not passed network isolation review."""
+    raise RuntimeError("Sumber Tribun/browser belum didukung pada runtime aman ini.")
 
-    try:
-        from webdriver_manager.chrome import ChromeDriverManager
-    except ModuleNotFoundError as e:
-        raise RuntimeError(
-            "webdriver-manager belum tersedia. Install dengan `python -m pip install webdriver-manager`."
-        ) from e
-
-    options = webdriver.ChromeOptions()
-    options.add_argument("--no-sandbox")
-    options.add_argument("--headless")
-    options.add_argument("--disable-gpu")
-    options.add_argument("--window-size=1920,1200")
-    options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
-
-    try:
-        return webdriver.Chrome(options=options)
-    except NoSuchDriverException:
-        service = Service(ChromeDriverManager().install())
-        return webdriver.Chrome(service=service, options=options)
 
 def fetch_with_selenium(url, driver=None, timeout=20, mode="html"):
-    """Fetch a page through Selenium and return HTML or visible text."""
-    try:
-        from selenium.common.exceptions import WebDriverException
-        from selenium.webdriver.common.by import By
-        from selenium.webdriver.support.ui import WebDriverWait
-    except ModuleNotFoundError:
-        print(f"[ERROR] Selenium unavailable while fetching {url}.")
-        return None
+    raise RuntimeError("Fallback browser dinonaktifkan sampai isolasi jaringannya terverifikasi.")
 
-    owned_driver = driver is None
-    current_driver = driver or build_web_driver()
 
-    try:
-        current_driver.set_page_load_timeout(timeout)
-        current_driver.get(url)
-        WebDriverWait(current_driver, timeout).until(
-            lambda d: d.execute_script("return document.readyState") == "complete"
-        )
-        time.sleep(1)
-
-        if mode == "text":
-            return current_driver.find_element(By.TAG_NAME, "body").text
-        return current_driver.page_source
-    except WebDriverException as e:
-        print(f"[ERROR] Selenium failed to fetch {url}: {e}")
-        return None
-    finally:
-        if owned_driver:
-            current_driver.quit()
-
-def fetch_content_with_fallback(
-    url,
-    retries=3,
-    delay=2,
-    timeout=10,
-    driver=None,
-    selenium_timeout=20,
-    mode="html",
-):
-    """Fetch a page with requests first and fallback to Selenium when blocked."""
-    response = fetch_page(url, retries=retries, delay=delay, timeout=timeout)
-    if response is not None:
-        text = decode_response_text(response)
-        if not is_blocked_response(text):
-            return text
-
-        print(f"[WARN] Requests response blocked for {url}, retrying with Selenium.")
-
-    selenium_content = fetch_with_selenium(url, driver=driver, timeout=selenium_timeout, mode=mode)
-    if is_blocked_response(selenium_content):
-        print(f"[ERROR] Selenium response also blocked for {url}.")
-        return None
-
-    return selenium_content
+def fetch_content_with_fallback(url, retries=2, delay=2, timeout=15,
+                                driver=None, selenium_timeout=20, mode="html"):
+    response = fetch_page(url, retries=retries, timeout=timeout)
+    text = decode_response_text(response)
+    if is_blocked_response(text):
+        raise RuntimeError("Sumber menolak akses; tidak mencoba melewati pembatasan.")
+    return text

@@ -1,0 +1,56 @@
+- link "Skip to main content":
+  - /url: "#stMain"
+- region "Sidebar":
+  - button "Fullscreen"
+  - img
+  - paragraph: Pantau berita lokal, telaah fenomena, dan simpan hasilnya.
+  - group:
+    - paragraph: Panduan singkat
+- banner:
+  - button "Expand sidebar"
+- main:
+  - text: Fenomena Statistik Kabupaten Bulungan
+  - heading "Fantastik Bulungan" [level=1]:
+    - text: Fantastik Bulungan
+    - link "Link to heading":
+      - /url: "#fantastik-bulungan"
+  - paragraph: Berita lokal untuk membaca fenomena daerah.
+  - group:
+    - paragraph: Kumpulkan berita
+  - heading "Hasil berita" [level=2]:
+    - text: Hasil berita
+    - link "Link to heading":
+      - /url: "#hasil-berita"
+  - text: Belum lengkap
+  - paragraph: 1 November 2026 - 6 November 2026 · Diambil 6 November 2026, 10.00 WITA
+  - group "Status sumber":
+    - strong: Prokal
+    - text: Lengkap 40 berita
+    - strong: Benuanta
+    - text: Gagal 0 berita
+    - strong: Radar Tarakan
+    - text: Lengkap 0 berita
+  - textbox "Cari dalam hasil":
+    - /placeholder: Judul, kategori, atau isi berita
+  - group:
+    - combobox "Kategori"
+    - button "Open"
+  - term: Berita sesuai filter
+  - definition: "40"
+  - term: Sumber dengan hasil
+  - definition: "1"
+  - term: Kategori
+  - definition: "3"
+  - radiogroup "Tampilan hasil":
+    - radio "Tabel" [checked]
+    - paragraph: Tabel
+    - radio "Detail"
+    - paragraph: Detail
+    - radio "Unduh"
+    - paragraph: Unduh
+  - button "Show/hide columns"
+  - button "Download as CSV"
+  - button "Search"
+  - button "Fullscreen"
+  - group:
+    - paragraph: Rincian pengambilan dan kendala

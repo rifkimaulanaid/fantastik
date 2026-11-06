@@ -1,0 +1,5 @@
+{
+  "status": 200,
+  "health": "ok",
+  "python": "3.12.16"
+}

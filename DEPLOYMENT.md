@@ -1,202 +1,60 @@
-# Deployment Fantastik
+# Deployment FANTASTIK
 
-## Identifikasi Proyek
+## Persyaratan
 
-Proyek ini adalah aplikasi **Python Streamlit**, bukan React, Vite, Next.js, Laravel, atau Express.
+- Server Linux, Docker Engine, Docker Compose yang mendukung `--wait`, `--wait-timeout`, serta beberapa `--env-file`, dan util-linux `flock`.
+- Port host default `127.0.0.1:8501`. Reverse proxy bertanggung jawab atas HTTPS, autentikasi bila diperlukan, dan rate limit sebelum aplikasi dipublikasikan.
+- Checkpoint disimpan pada named volume `fantastik_data` di `/app/data`. Container memakai UID 10001, root filesystem read-only, tanpa Linux capabilities, dengan batas memori 1 GiB/1,5 CPU/128 PID.
+- Host memerlukan akses HTTPS keluar ke GHCR dan portal berita yang disetujui. Transport aplikasi memblokir tujuan nonpublik dan memin IP koneksi; kebijakan firewall/egress host tetap dikelola administrator.
 
-Indikator utamanya:
-- entrypoint aplikasi ada di `main.py`
-- dependency didefinisikan di `requirements.txt`
-- runtime web memakai `streamlit`
+## Setup server
 
-## Alur Deployment
+Buat direktori deploy yang dimiliki user SSH, misalnya `/opt/fantastik`. User tersebut memerlukan hak Docker. Simpan `.env` dari `.env.example`, sesuaikan `IMAGE_NAME`, `APP_PORT`, dan timezone. Jangan menyimpan secret di repository.
 
-1. Developer push perubahan ke branch `main`.
-2. GitHub Actions build Docker image dari repository ini.
-3. Image dipush ke **GitHub Container Registry (GHCR)** dengan tag:
-   - `latest`
-   - `sha-<commit-sha>`
-4. GitHub Actions melakukan SSH ke server.
-5. Server menerima file deployment minimal:
-   - `docker-compose.yml`
-   - `.env.example`
-6. Server menjalankan:
-   - `docker compose pull`
-   - `docker compose up -d`
-7. Source code aplikasi tidak dibuild di server.
+GitHub Secrets wajib: `SERVER_HOST`, `SERVER_PORT`, `SERVER_USER`, `SERVER_SSH_KEY`, `SERVER_SSH_KNOWN_HOSTS`, `SERVER_DEPLOY_PATH`. Gunakan hostname/IPv4, username tanpa spasi, port numerik, dan path absolut tanpa spasi atau `..`. SSH memverifikasi host key dan memakai key khusus deployment.
 
-## Struktur File yang Disarankan
+Untuk package private, isi `GHCR_USERNAME` dan `GHCR_TOKEN` dengan token khusus `read:packages`. Token build/push memakai `GITHUB_TOKEN` dengan permission `packages:write`. Workflow memakai environment `production`; protection/approval rule dapat dikelola melalui pengaturan GitHub sesuai kebijakan organisasi.
 
-```text
-.
-|- .github/
-|  |- workflows/
-|     `- container-deploy.yml
-|- .streamlit/
-|  `- config.toml
-|- asset/
-|- helper/
-|- scrap/
-|- styles/
-|- .dockerignore
-|- .env.example
-|- DEPLOYMENT.md
-|- docker-compose.yml
-|- Dockerfile
-|- main.py
-`- requirements.txt
-```
+## Alur rilis
 
-## File yang Dipakai untuk Production
+1. PR dan push menjalankan tes unit/integrasi, smoke test UI/ekspor, Bandit, dan audit dependensi pada Windows/Linux Python 3.12. Job Linux juga memeriksa UI browser desktop/ponsel dengan data sintetis, termasuk kontras tanggal, fokus, navigasi artikel, dan posisi hasil.
+2. Setelah pemeriksaan berhasil, push `main` atau workflow manual pada `main` membangun image. Dependensi dipasang dari lock berhash, Actions dipin ke SHA, dan base Python dipin ke digest. Chromium tidak dibawa karena sumber aktif tidak memerlukannya.
+3. Image didorong ke GHCR dengan tag `latest` dan `sha-<full-commit>`. **Deployment menggunakan digest hasil build**, bukan tag `latest` dari `.env` server.
+4. CI menjalankan smoke test image tanpa network dan memindai paket OS/aplikasi menggunakan Trivy yang dipin ke digest. Temuan HIGH/CRITICAL yang sudah memiliki perbaikan memblokir deployment. Jika scanner/database tidak tersedia, deployment juga tidak dilanjutkan.
+5. Workflow mengirim `docker-compose.yml`, `.env.example`, dan `deploy.sh`. File `.env` server dipertahankan.
+6. `deploy.sh` mengunci direktori dengan `flock`, menarik image, memverifikasi label revision, lalu menjalankan smoke test image dengan network dinonaktifkan sebelum mengganti container aktif.
+7. Compose menunggu status sehat maksimal 90 detik. Revision container diperiksa lagi dan smoke test aplikasi/ekspor dijalankan pada container yang aktif.
+8. Jika pemeriksaan setelah pergantian gagal, script mencoba memulihkan **image ID lokal sebelumnya** dan tetap mengembalikan status gagal. Rilis pertama tidak memiliki image sebelumnya untuk rollback. Kegagalan rollback dinyatakan jelas di log.
+9. Setelah berhasil, digest tersimpan atomik pada `.release.env`; referensi sebelumnya ada pada `.previous-release.env`. Image lama tidak dipangkas otomatis.
 
-- `Dockerfile`
-  Membuat image production aplikasi Streamlit.
-- `docker-compose.yml`
-  Dipakai di server untuk menjalankan image dari GHCR.
-- `.env.example`
-  Template variabel environment untuk server.
-- `.github/workflows/container-deploy.yml`
-  Build, push, dan deploy otomatis.
+Workflow tidak membatalkan deployment aktif ketika ada push berikutnya. Lock server juga mencegah dua deployment berjalan bersamaan.
 
-## GitHub Secrets yang Perlu Dibuat
+## Restart, pengamatan, dan rollback manual
 
-### Wajib
-
-- `SERVER_HOST`
-  IP atau hostname server.
-- `SERVER_PORT`
-  Port SSH server, misalnya `22`.
-- `SERVER_USER`
-  User SSH di server, misalnya `deploy`.
-- `SERVER_SSH_KEY`
-  Private key untuk login SSH dari GitHub Actions.
-- `SERVER_SSH_KNOWN_HOSTS`
-  Output host key server, biasanya dari `ssh-keyscan -H <host>`.
-- `SERVER_DEPLOY_PATH`
-  Folder deployment di server, misalnya `/opt/fantastik`.
-
-### Opsional tapi Direkomendasikan untuk Image Private
-
-- `GHCR_USERNAME`
-  Username GitHub pemilik token registry.
-- `GHCR_TOKEN`
-  Personal Access Token atau fine-grained token dengan minimal akses `read:packages`.
-
-Catatan:
-- Workflow build dan push ke GHCR menggunakan `GITHUB_TOKEN` bawaan GitHub Actions.
-- `GHCR_USERNAME` dan `GHCR_TOKEN` dibutuhkan jika package GHCR diset **private** dan server perlu login sebelum pull.
-
-## Setup Awal di PC Server
-
-Asumsi:
-- Docker dan Docker Compose sudah terpasang
-- server berbasis Linux
-
-### 1. Buat user deploy opsional
-
-```bash
-sudo adduser --disabled-password --gecos "" deploy
-sudo usermod -aG docker deploy
-```
-
-### 2. Buat direktori deployment
-
-```bash
-sudo mkdir -p /opt/fantastik
-sudo chown -R deploy:deploy /opt/fantastik
-```
-
-### 3. Siapkan file `.env`
-
-Masuk ke direktori deploy:
+Sesudah rilis pertama, gunakan `.release.env` agar restart tetap memakai digest yang telah diverifikasi:
 
 ```bash
 cd /opt/fantastik
-cp .env.example .env
+docker compose --env-file .env --env-file .release.env up -d --no-build --wait --wait-timeout 90
+docker compose --env-file .env --env-file .release.env ps
+docker compose --env-file .env --env-file .release.env logs --tail 100 fantastik
 ```
 
-Isi `.env` contoh:
-
-```env
-IMAGE_NAME=ghcr.io/owner/repo
-IMAGE_TAG=latest
-CONTAINER_NAME=fantastik
-APP_PORT=8501
-TZ=Asia/Makassar
-```
-
-Ganti `owner/repo` dengan nama image GHCR aktual Anda.
-
-### 4. Login registry jika image private
+Untuk kembali ke referensi rilis sebelumnya, tinjau dahulu isi `.previous-release.env`, kemudian jalankan:
 
 ```bash
-echo "<GHCR_TOKEN>" | docker login ghcr.io -u "<GHCR_USERNAME>" --password-stdin
+docker compose --env-file .env --env-file .previous-release.env pull fantastik
+docker compose --env-file .env --env-file .previous-release.env up -d --no-build --wait --wait-timeout 90 fantastik
 ```
 
-### 5. Uji pull dan run manual sekali
+Sesudah rollback manual, sesuaikan `.release.env` dengan referensi yang dipilih agar restart berikutnya konsisten. Jangan gunakan `docker compose down -v` saat ingin mempertahankan checkpoint.
 
-```bash
-cd /opt/fantastik
-docker compose --env-file .env pull
-docker compose --env-file .env up -d
-docker compose ps
-```
+## Checkpoint dan pemulihan
 
-## Cara Kerja Workflow GitHub Actions
+Aplikasi menyimpan maksimal 20 checkpoint terbaru, secara atomik dan dengan interval penulisan disk sekitar dua detik. Checkpoint proses yang terputus diberi status belum lengkap ketika dipulihkan melalui sidebar. Pemulihan menampilkan data tersimpan; tidak melanjutkan request secara otomatis.
 
-Workflow `container-deploy.yml` memiliki dua job:
+Pada server bersama, checkpoint di disk tersedia lintas sesi aplikasi dan hanya berisi berita publik/parameter pengumpulan. Batasi akses aplikasi pada gateway bila parameter riset memerlukan pembatasan pengguna. File unduhan JSON dapat digunakan sebagai arsip lengkap, termasuk metadata dan alasan kegagalan. Volume perlu masuk kebijakan backup server.
 
-### `build-and-push`
+## Batas verifikasi lokal
 
-- checkout repository
-- login ke GHCR
-- build image dari `Dockerfile`
-- push image ke GHCR dengan tag `latest` dan `sha-<commit-sha>`
-
-### `deploy`
-
-- checkout repository
-- buka koneksi SSH ke server
-- upload `docker-compose.yml` dan `.env.example`
-- login ke GHCR di server jika secret registry tersedia
-- jalankan:
-  - `docker compose pull`
-  - `docker compose up -d --remove-orphans`
-
-## Catatan Keamanan
-
-### SSH Key
-
-- gunakan key khusus deployment, jangan key pribadi harian
-- batasi key itu hanya untuk user deploy
-- simpan private key hanya di GitHub Secret `SERVER_SSH_KEY`
-- simpan host fingerprint di `SERVER_SSH_KNOWN_HOSTS`, jangan gunakan `StrictHostKeyChecking=no`
-
-### Registry Token
-
-- jika image GHCR private, gunakan token khusus read-only untuk server
-- jangan gunakan PAT dengan scope lebih luas dari yang dibutuhkan
-- minimal akses untuk server adalah `read:packages`
-
-### File `.env`
-
-- file `.env` hanya disimpan di server, jangan commit ke repository
-- `.env.example` boleh di-commit karena hanya template
-- jika nanti ada secret aplikasi, simpan di `.env` server atau secret manager, bukan di workflow YAML
-
-### GitHub Actions
-
-- workflow saat ini tidak melakukan `docker compose build` di server
-- workflow tidak meng-copy source code aplikasi ke server, hanya file deployment minimum
-- jika ingin review manual sebelum deploy, tambahkan protection rules pada branch `main`
-
-## Catatan Operasional
-
-- deployment ini cocok untuk production sederhana dengan satu server
-- jika image dibuat private, pastikan server bisa login ke GHCR
-- jika nanti ingin rollback, ubah `IMAGE_TAG` di `.env` server menjadi tag `sha-<commit-sha>` tertentu lalu jalankan:
-
-```bash
-docker compose --env-file .env pull
-docker compose --env-file .env up -d
-```
+Tes rollback menggunakan Docker pengganti untuk menguji alur perintah, status gagal, dan pemilihan image; bukan bukti deployment server. Build/runtime Linux yang sebenarnya dan konfigurasi reverse proxy/Secrets harus diverifikasi oleh CI/server. Docker daemon tidak tersedia pada lingkungan audit lokal, sehingga tidak ada deployment produksi yang dilakukan dari sesi perbaikan ini.

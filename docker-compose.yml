@@ -4,10 +4,21 @@ services:
       context: .
       dockerfile: Dockerfile
 
-    image: ${IMAGE_NAME:-fantastik}:${IMAGE_TAG:-latest}
+    image: ${APP_IMAGE:-${IMAGE_NAME:-fantastik}:${IMAGE_TAG:-latest}}
     container_name: ${CONTAINER_NAME:-fantastik}
     hostname: fantastik
     restart: unless-stopped
+    read_only: true
+    mem_limit: 1g
+    cpus: 1.5
+    pids_limit: 128
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=64m,mode=1777
+    volumes:
+      - fantastik_data:/app/data
 
     ports:
       - "127.0.0.1:${APP_PORT:-8501}:8501"
@@ -27,3 +38,6 @@ services:
 networks:
   fantastik_net:
     name: fantastik_net
+
+volumes:
+  fantastik_data:

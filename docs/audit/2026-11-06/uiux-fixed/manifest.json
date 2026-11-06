@@ -1,0 +1,14 @@
+{
+  "python": "3.12.16",
+  "browser": "157.0.8103.39",
+  "channel": "chrome",
+  "playwright": "1.58.0",
+  "source_sha256": {
+    "main.py": "280dbfab1423044d371dcd0f582bfe01e2fe7c96b685f122f7f429c127ee1b6a",
+    "styles/style.css": "667b3070699302819a9725480192dba0fa85bf879d7304801b10b6b6cf3e78f7",
+    ".streamlit/config.toml": "67e6014353c98ec532c0482aab1982049c121fb3aa60bba892d32c2d9897d4b6",
+    "helper/presentation.py": "befa9abb666de693b167f15587751f6ff25f1c278852a6ecc3ff594c33602476",
+    "scripts/check_ui.py": "a7805226eb3d3f3375873865e58a7a06e4eda8b882b595b8f172c97cc161a460",
+    "tests/ui_fixture.py": "e250e35ee080324bf9f03657e0603209771e9e6a0b93dc8e0eb68638e199b48f"
+  }
+}

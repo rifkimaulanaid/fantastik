@@ -1,0 +1,23 @@
+[
+  {
+    "source": "Prokal",
+    "api_rows": 1,
+    "has_more": true,
+    "body_characters": 7305,
+    "status": "ok"
+  },
+  {
+    "source": "Radar Tarakan",
+    "api_rows": 1,
+    "has_more": true,
+    "body_characters": 3104,
+    "status": "ok"
+  },
+  {
+    "source": "Benuanta",
+    "status": "ok",
+    "index_articles": 30,
+    "parsed_date": "2026-11-06",
+    "body_characters": 1945
+  }
+]

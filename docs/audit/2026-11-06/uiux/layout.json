@@ -1,0 +1,144 @@
+[
+  {
+    "scenario": "desktop-empty",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "hero": {
+      "x": 380,
+      "y": 115.1875,
+      "width": 980,
+      "height": 337.984375
+    },
+    "page_errors": [],
+    "main_scroll": {
+      "height": 900,
+      "contentHeight": 900,
+      "width": 1140,
+      "contentWidth": 1140
+    },
+    "date_styles": [
+      {
+        "tag": "SPAN",
+        "role": "spinbutton",
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "14px"
+      },
+      {
+        "tag": "DIV",
+        "role": "group",
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "14px"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "14px"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "14px"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "14px"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "color": "rgb(247, 239, 228)",
+        "background": "rgb(241, 240, 238)",
+        "font": "14px"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "16px"
+      },
+      {
+        "tag": "DIV",
+        "role": null,
+        "color": "rgb(247, 239, 228)",
+        "background": "rgba(0, 0, 0, 0)",
+        "font": "16px"
+      }
+    ]
+  },
+  {
+    "scenario": "desktop-results",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "hero": {
+      "x": 380,
+      "y": 115.1875,
+      "width": 980,
+      "height": 337.984375
+    },
+    "page_errors": [],
+    "main_scroll": {
+      "height": 900,
+      "contentHeight": 1786,
+      "width": 1140,
+      "contentWidth": 1140
+    },
+    "search_box": {
+      "x": 381,
+      "y": 996.546875,
+      "width": 578,
+      "height": 35.59375
+    },
+    "table": {
+      "x": 380,
+      "y": 1226.34375,
+      "width": 980,
+      "height": 400
+    }
+  },
+  {
+    "scenario": "mobile-results",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "hero": {
+      "x": 16,
+      "y": 115.1875,
+      "width": 358,
+      "height": 712.25
+    },
+    "page_errors": [],
+    "main_scroll": {
+      "height": 844,
+      "contentHeight": 2593,
+      "width": 390,
+      "contentWidth": 390
+    },
+    "search_box": {
+      "x": 17,
+      "y": 1535.59375,
+      "width": 356,
+      "height": 35.59375
+    },
+    "table": {
+      "x": 16,
+      "y": 2033.390625,
+      "width": 358,
+      "height": 400
+    }
+  }
+]

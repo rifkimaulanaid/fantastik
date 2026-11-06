@@ -15,3 +15,8 @@ debug/
 .streamlit/secrets.toml
 DEPLOYMENT.md
 docker-compose.yml
+docs/
+tests/
+data/
+.env.*
+requirements-dev.*

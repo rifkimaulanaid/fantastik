@@ -5,3 +5,14 @@ port = 8501
 
 [browser]
 gatherUsageStats = false
+
+[client]
+toolbarMode = "minimal"
+
+[theme]
+base = "light"
+primaryColor = "#145b53"
+backgroundColor = "#f7f6f2"
+secondaryBackgroundColor = "#edf2ef"
+textColor = "#19383d"
+font = "sans serif"

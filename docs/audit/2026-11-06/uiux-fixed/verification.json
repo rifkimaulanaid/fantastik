@@ -1,0 +1,116 @@
+[
+  {
+    "scenario": "desktop-empty",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "preference": "light",
+    "main": {
+      "width": 1140,
+      "scrollWidth": 1140
+    },
+    "date_contrast": 11.077571265664256,
+    "keyboard_focus": {
+      "role": "spinbutton",
+      "outline": "solid",
+      "width": "3px"
+    },
+    "primary_button_contrast": 7.921284043647482
+  },
+  {
+    "scenario": "desktop-results",
+    "viewport": {
+      "width": 1440,
+      "height": 900
+    },
+    "preference": "light",
+    "main": {
+      "width": 1140,
+      "scrollWidth": 1140
+    },
+    "table": {
+      "x": 340,
+      "y": 561.359375,
+      "width": 1060,
+      "height": 400
+    },
+    "article_navigation": "passed"
+  },
+  {
+    "scenario": "mobile-results",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "preference": "light",
+    "main": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "table": {
+      "x": 16,
+      "y": 595.28125,
+      "width": 358,
+      "height": 400
+    },
+    "article_navigation": "passed"
+  },
+  {
+    "scenario": "narrow-results",
+    "viewport": {
+      "width": 320,
+      "height": 844
+    },
+    "preference": "light",
+    "main": {
+      "width": 320,
+      "scrollWidth": 320
+    },
+    "table": {
+      "x": 16,
+      "y": 613.1875,
+      "width": 288,
+      "height": 400
+    },
+    "article_navigation": "passed"
+  },
+  {
+    "scenario": "mobile-empty",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "preference": "light",
+    "main": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "date_contrast": 11.077571265664256,
+    "keyboard_focus": {
+      "role": "spinbutton",
+      "outline": "solid",
+      "width": "3px"
+    },
+    "primary_button_contrast": 7.921284043647482
+  },
+  {
+    "scenario": "dark-preference",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "preference": "dark",
+    "main": {
+      "width": 390,
+      "scrollWidth": 390
+    },
+    "date_contrast": 11.077571265664256,
+    "keyboard_focus": {
+      "role": "spinbutton",
+      "outline": "solid",
+      "width": "3px"
+    },
+    "primary_button_contrast": 7.921284043647482
+  }
+]

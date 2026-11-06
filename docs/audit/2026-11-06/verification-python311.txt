@@ -1,0 +1,76 @@
+test_health_failure_restores_previous_immutable_image (test_deploy.DeploymentTests.test_health_failure_restores_previous_immutable_image) ... ok
+test_smoke_failure_does_not_replace_existing_container (test_deploy.DeploymentTests.test_smoke_failure_does_not_replace_existing_container) ... ok
+test_success_persists_exact_digest_after_wait_and_smoke (test_deploy.DeploymentTests.test_success_persists_exact_digest_after_wait_and_smoke) ... ok
+test_unpinned_image_rejected_before_docker (test_deploy.DeploymentTests.test_unpinned_image_rejected_before_docker) ... ok
+test_wrong_running_revision_triggers_rollback (test_deploy.DeploymentTests.test_wrong_running_revision_triggers_rollback) ... ok
+test_atomic_checkpoint_and_interrupted_status (test_jobs_and_ui.JobTests.test_atomic_checkpoint_and_interrupted_status) ... ok
+test_background_job_completes_and_persists_without_streamlit (test_jobs_and_ui.JobTests.test_background_job_completes_and_persists_without_streamlit) ... ok
+test_checkpoint_path_traversal_rejected (test_jobs_and_ui.JobTests.test_checkpoint_path_traversal_rejected) ... ok
+test_checkpoint_retention_keeps_unrelated_files (test_jobs_and_ui.JobTests.test_checkpoint_retention_keeps_unrelated_files) ... ok
+test_global_concurrency_rejects_third_job (test_jobs_and_ui.JobTests.test_global_concurrency_rejects_third_job) ... ok
+test_storage_error_does_not_discard_in_memory_result (test_jobs_and_ui.JobTests.test_storage_error_does_not_discard_in_memory_result) ... ok
+test_cancel_button_signals_worker (test_jobs_and_ui.UITests.test_cancel_button_signals_worker) ... 2026-11-06 15:51:10.364 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:11.240 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:11.291 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_completed_background_job_adopts_result_and_archives_previous (test_jobs_and_ui.UITests.test_completed_background_job_adopts_result_and_archives_previous) ... 2026-11-06 15:51:11.390 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:11.600 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:11.649 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_export_only_runs_on_prepare_and_invalidates_after_filter (test_jobs_and_ui.UITests.test_export_only_runs_on_prepare_and_invalidates_after_filter) ... 2026-11-06 15:51:11.720 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:11.920 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_failed_attempt_preserves_previous_good_result (test_jobs_and_ui.UITests.test_failed_attempt_preserves_previous_good_result) ... 2026-11-06 15:51:12.155 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:12.310 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:12.360 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_html_category_uses_text_and_one_detail (test_jobs_and_ui.UITests.test_html_category_uses_text_and_one_detail) ... 2026-11-06 15:51:12.420 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:12.641 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_search_bracket_and_no_eager_details_or_export (test_jobs_and_ui.UITests.test_search_bracket_and_no_eager_details_or_export) ... 2026-11-06 15:51:12.841 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:13.036 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+ok
+test_bad_article_does_not_drop_next_article (test_scrapers.ScraperTests.test_bad_article_does_not_drop_next_article) ... ok
+test_benuanta_changed_layout_does_not_mean_zero_news (test_scrapers.ScraperTests.test_benuanta_changed_layout_does_not_mean_zero_news) ... ok
+test_benuanta_fetch_failure_is_failed (test_scrapers.ScraperTests.test_benuanta_fetch_failure_is_failed) ... ok
+test_benuanta_page_cap_and_missing_body_are_visible (test_scrapers.ScraperTests.test_benuanta_page_cap_and_missing_body_are_visible) ... ok
+test_benuanta_pinned_old_article_does_not_hide_next_page (test_scrapers.ScraperTests.test_benuanta_pinned_old_article_does_not_hide_next_page) ... ok
+test_benuanta_unsafe_link_never_reaches_detail (test_scrapers.ScraperTests.test_benuanta_unsafe_link_never_reaches_detail) ... ok
+test_benuanta_valid_empty_marker_is_success (test_scrapers.ScraperTests.test_benuanta_valid_empty_marker_is_success) ... ok
+test_cancellation_preserves_article_metadata (test_scrapers.ScraperTests.test_cancellation_preserves_article_metadata) ... ok
+test_duplicate_in_overlapping_pages_is_skipped (test_scrapers.ScraperTests.test_duplicate_in_overlapping_pages_is_skipped) ... ok
+test_entity_quotes_do_not_corrupt_json (test_scrapers.ScraperTests.test_entity_quotes_do_not_corrupt_json) ... ok
+test_inactive_browser_source_fails_closed (test_scrapers.ScraperTests.test_inactive_browser_source_fails_closed) ... ok
+test_invalid_dates_and_source_fail_before_fetch (test_scrapers.ScraperTests.test_invalid_dates_and_source_fail_before_fetch) ... ok
+test_later_page_failure_keeps_prior_data_for_both_publishers (test_scrapers.ScraperTests.test_later_page_failure_keeps_prior_data_for_both_publishers) ... ok
+test_null_and_broken_schema_never_report_success (test_scrapers.ScraperTests.test_null_and_broken_schema_never_report_success) ... ok
+test_out_of_range_does_not_fetch_detail (test_scrapers.ScraperTests.test_out_of_range_does_not_fetch_detail) ... ok
+test_page_article_text_and_time_limits_are_partial (test_scrapers.ScraperTests.test_page_article_text_and_time_limits_are_partial) ... ok
+test_pipeline_keeps_checkpoints_when_adapter_raises (test_scrapers.ScraperTests.test_pipeline_keeps_checkpoints_when_adapter_raises) ... ok
+test_repeated_page_stops_without_repeating_content (test_scrapers.ScraperTests.test_repeated_page_stops_without_repeating_content) ... ok
+test_successful_content_is_cached_but_invalid_content_is_not (test_scrapers.ScraperTests.test_successful_content_is_cached_but_invalid_content_is_not) ... ok
+test_valid_empty_is_success (test_scrapers.ScraperTests.test_valid_empty_is_success) ... ok
+test_all_sheets_write_external_values_as_text (test_security_and_export.ExportTests.test_all_sheets_write_external_values_as_text) ... ok
+test_control_characters_preserved_as_documented_escapes (test_security_and_export.ExportTests.test_control_characters_preserved_as_documented_escapes) ... ok
+test_literal_search_and_optional_columns (test_security_and_export.ExportTests.test_literal_search_and_optional_columns) ... ok
+test_long_unicode_text_is_reconstructable (test_security_and_export.ExportTests.test_long_unicode_text_is_reconstructable) ... ok
+test_bad_urls_fail_before_network (test_security_and_export.URLSecurityTests.test_bad_urls_fail_before_network) ... ok
+test_bounded_response_and_closed_stream (test_security_and_export.URLSecurityTests.test_bounded_response_and_closed_stream) ... ok
+test_connection_pins_ip_but_keeps_tls_hostname (test_security_and_export.URLSecurityTests.test_connection_pins_ip_but_keeps_tls_hostname) ... ok
+test_dns_private_mixed_and_multicast_are_rejected (test_security_and_export.URLSecurityTests.test_dns_private_mixed_and_multicast_are_rejected) ... ok
+test_no_retry_for_403 (test_security_and_export.URLSecurityTests.test_no_retry_for_403) ... ok
+test_redirect_cannot_leave_publisher (test_security_and_export.URLSecurityTests.test_redirect_cannot_leave_publisher) ... ok
+test_redirect_is_checked_before_second_request (test_security_and_export.URLSecurityTests.test_redirect_is_checked_before_second_request) ... ok
+test_small_response_still_decodes_after_close (test_security_and_export.URLSecurityTests.test_small_response_still_decodes_after_close) ... ok
+test_trickling_response_stops_at_deadline (test_security_and_export.URLSecurityTests.test_trickling_response_stops_at_deadline) ... ok
+test_base_image_is_pinned_and_runtime_has_no_browser (test_workflow.WorkflowTests.test_base_image_is_pinned_and_runtime_has_no_browser) ... ok
+test_deployment_requires_tests_and_image_scan (test_workflow.WorkflowTests.test_deployment_requires_tests_and_image_scan) ... ok
+
+----------------------------------------------------------------------
+Ran 52 tests in 5.957s
+
+OK
+
+Offline UI and export smoke test passed.
+2026-11-06 15:51:14.494 WARNING streamlit.runtime.scriptrunner_utils.script_run_context: Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.
+2026-11-06 15:51:15.727 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.

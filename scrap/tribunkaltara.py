@@ -338,32 +338,5 @@ def parse_article_page(url, driver=None):
 
 # Kaltara Tribunnews Scrap Function
 def tribun_scrap(dates_to_scrape, delay=1):
-    """Scrape Tribun Kaltara news by target dates through sitemap discovery."""
-    target_dates = normalize_target_dates(dates_to_scrape)
-    if not target_dates:
-        return []
-
-    scraped_data = []
-    driver = None
-
-    try:
-        try:
-            driver = build_web_driver()
-        except Exception as e:
-            print(f"[WARN] Selenium driver unavailable, continuing with requests only: {e}")
-
-        candidate_urls = discover_candidate_urls(target_dates, driver=driver, delay=delay)
-        if not candidate_urls:
-            print("[INFO] No Tribun Kaltara candidate URLs matched target dates.")
-            return []
-
-        for article_url in candidate_urls:
-            article = parse_article_page(article_url, driver=driver)
-            if article and article["Tanggal"] in target_dates:
-                scraped_data.append(article)
-            time.sleep(random.uniform(0.2, max(0.2, delay)))
-    finally:
-        if driver is not None:
-            driver.quit()
-
-    return scraped_data
+    """Inactive adapter: require a bounded and verified implementation first."""
+    raise RuntimeError("Sumber Tribun belum aktif; gunakan sumber media yang tersedia pada aplikasi.")

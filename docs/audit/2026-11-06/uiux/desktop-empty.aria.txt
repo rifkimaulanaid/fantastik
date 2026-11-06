@@ -1,0 +1,44 @@
+- link "Skip to main content":
+  - /url: "#stMain"
+- region "Sidebar":
+  - button "Fullscreen"
+  - img
+  - heading "Filter Scraping" [level=2]
+  - group "Tanggal Awal":
+    - spinbutton "day, Tanggal Awal": "06"
+    - spinbutton "month, Tanggal Awal": "11"
+    - spinbutton "year, Tanggal Awal": "2026"
+  - button "Choose date"
+  - group "Tanggal Akhir":
+    - spinbutton "day, Tanggal Akhir": "06"
+    - spinbutton "month, Tanggal Akhir": "11"
+    - spinbutton "year, Tanggal Akhir": "2026"
+  - button "Choose date"
+  - group:
+    - combobox "Sumber Media"
+    - button "Open"
+  - button "Proses":
+    - paragraph: Proses
+  - paragraph: Maksimal 31 hari, 200 halaman, 1.000 artikel, dan 3 menit per sumber. Proses dapat dibatalkan; hasil parsial dipertahankan.
+- banner:
+  - button "Deploy"
+  - button "Main menu"
+- main:
+  - text: Fenomena Statistik Kabupaten Bulungan
+  - heading "Fantastik Bulungan" [level=1]:
+    - text: Fantastik Bulungan
+    - link "Link to heading":
+      - /url: "#fantastik-bulungan"
+  - paragraph: Kumpulkan berita lokal dari beberapa portal media untuk mendukung pemantauan fenomena statistik menurut waktu, kategori, dan isi berita.
+  - text: Benuanta Prokal Radar Tarakan
+  - heading "Alur Singkat" [level=3]:
+    - text: Alur Singkat
+    - link "Link to heading":
+      - /url: "#alur-singkat"
+  - list:
+    - listitem: Tentukan tanggal awal dan tanggal akhir di sidebar.
+    - listitem: Pilih satu atau beberapa sumber media aktif.
+    - listitem: Jalankan proses scraping lalu telaah hasil pada tabel dan detail berita.
+    - listitem: Unduh hasil akhir dalam format Excel jika diperlukan.
+  - status:
+    - paragraph: Atur tanggal dan sumber, lalu klik Proses untuk mengumpulkan berita.

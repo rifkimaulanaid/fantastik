@@ -1,0 +1,210 @@
+{
+  "audit_date": "2026-11-06",
+  "commit": "27f350f4eef80c74f52ef5a1c589ad95232c29f8",
+  "python": "3.11.9",
+  "versions": {
+    "pandas": "2.3.3",
+    "streamlit": "1.55.0",
+    "openpyxl": "3.1.5",
+    "requests": "2.32.5",
+    "beautifulsoup4": "4.15.0",
+    "Pillow": "12.1.1"
+  },
+  "method": "Synthetic fixtures and Streamlit AppTest; only HTTP is a controlled loopback server",
+  "source_sha256": {
+    ".dockerignore": "7e22bff878aed8ce24c4940be462683d1082edc2a0ae23dc7a92c4e752568183",
+    ".env.example": "240a6f88bf8ad31b0c92437b953eeebb1a8bf4a85ce75322115aaad2c8c1a649",
+    ".github/workflows/container-deploy.yml": "f2c9e1b14ec3a34f33d28ddc5a6d821ce413f3ffd29f8d11f0bedf1628f8b37f",
+    ".gitignore": "58a7b2a6e9e43677e7b2ae97cb05644643b14eb1c36b53af20bc46600b32f321",
+    ".streamlit/config.toml": "4a6f23bd3ba32482651755ada47a12b589c0a2de2bd1df88b631a347e1bb621e",
+    "DEPLOYMENT.md": "e5fb513ef032d3937d53c06a21f448bc248be519e060000a7c0203b0580c2fe2",
+    "Dockerfile": "e12843a4c242fb6dc2b3b02c499249f04a8d4d3c8f698968aefe88600d3e2039",
+    "README.md": "f3be13455b1ad2a087a2432f686449c63f4b5e9964d15e8b720d96e3e3ab5d4a",
+    "asset/Fantastik_Logo.png": "f76d28a023448f31112ab3f3bcc55ee5b8bd1e167d8ed585fe93fae1abb41916",
+    "asset/Fantastik_Logo_Teks.png": "e203a2fdb1f81bf380ea8722afe09aaf2f5228d9376d97709928dd94b68ec784",
+    "asset/LOGO-BPS.png": "2f880d5fd8a750c1f67dee5730195d695a03a56ce1a616a9d3ebda67ab237aa7",
+    "docker-compose.yml": "945ae13c75c5c0154235b55cd2b379898dc025dc5d4206d4d7607bb8e615f154",
+    "helper/helper_function.py": "f4e155c40d355610788ec00680aaa2e2c4f5dab55f8fd1e4b524ce7e6a098b91",
+    "main.py": "98d3ad7c04634791063787b342872729ed3a9012809a73fd58dbbfa4821543d0",
+    "requirements.txt": "46db72396c5fbe17f942e30aaaa73860a1384c1bff8a6331e50aa7845c7525e8",
+    "scrap/benuanta.py": "2924e91be42ca3cb8b87ea05cab7aa5718bb500b565de9ee33638c8654d4d0a2",
+    "scrap/prokal.py": "a6333d18f452a3d90fefd4e5640bda535a5c9034bfaf96c7895f6d84209e65bc",
+    "scrap/radartarakan.py": "b62831fcd3ee3b56d6ba8b8d06d79e49ef370b9d83e6ea7ca57060e03a5d5ebc",
+    "scrap/tribunkaltara.py": "557eecf929719b5c7c1ff97f964f89c56b44001776c759c2379fd66d4bfd9489",
+    "styles/style.css": "ccd7759abc6ff7650991aa546be39c7f892d7b7b25fddb56fdcddad7c4c797cf"
+  },
+  "checks": [
+    {
+      "name": "excel_formula_interpretation",
+      "outcome": "observed",
+      "detail": {
+        "input": "=1+1",
+        "saved_cell_type": "f",
+        "saved_value": "=1+1"
+      },
+      "seconds": 0.041
+    },
+    {
+      "name": "excel_long_text_and_control_character",
+      "outcome": "observed",
+      "detail": {
+        "input_characters": 40000,
+        "saved_characters": 32767,
+        "invalid_control_character_error": "IllegalCharacterError"
+      },
+      "seconds": 0.027
+    },
+    {
+      "name": "keyword_regex_crashes_actual_ui",
+      "outcome": "observed",
+      "detail": {
+        "keyword": "[",
+        "ui_error": "unterminated character set at position 0"
+      },
+      "seconds": 1.461
+    },
+    {
+      "name": "keyword_dot_matches_all_actual_ui",
+      "outcome": "observed",
+      "detail": {
+        "keyword": ".",
+        "rows_without_literal_dot": 2,
+        "displayed_rows": 2
+      },
+      "seconds": 0.212
+    },
+    {
+      "name": "benuanta_fetch_failure_reported_as_success",
+      "outcome": "observed",
+      "detail": {
+        "source": "Benuanta",
+        "status": "success",
+        "count": 0,
+        "message": null
+      },
+      "seconds": 0.001
+    },
+    {
+      "name": "benuanta_page_cap_reported_as_success",
+      "outcome": "observed",
+      "detail": {
+        "pages_requested": 2,
+        "target_range_not_reached": true,
+        "result_rows": 0,
+        "terminal_error": false,
+        "default_max_page": 200
+      },
+      "seconds": 0.002
+    },
+    {
+      "name": "missing_article_content_reported_as_success",
+      "outcome": "observed",
+      "detail": {
+        "report": {
+          "source": "Benuanta",
+          "status": "success",
+          "count": 1,
+          "message": null
+        },
+        "rows_without_body": 1
+      },
+      "seconds": 0.001
+    },
+    {
+      "name": "graphql_later_page_error_discards_prior_rows",
+      "outcome": "observed",
+      "detail": [
+        {
+          "source": "Prokal",
+          "prior_rows_parsed": 1,
+          "returned_rows": 0,
+          "status": "error"
+        },
+        {
+          "source": "Radar Tarakan",
+          "prior_rows_parsed": 1,
+          "returned_rows": 0,
+          "status": "error"
+        }
+      ],
+      "seconds": 0.001
+    },
+    {
+      "name": "graphql_double_unescape_breaks_valid_payload",
+      "outcome": "observed",
+      "detail": {
+        "valid_json_before_html_encoding": true,
+        "errors": {
+          "scrap.prokal": "JSONDecodeError",
+          "scrap.radartarakan": "JSONDecodeError"
+        }
+      },
+      "seconds": 0.001
+    },
+    {
+      "name": "graphql_accepts_out_of_range_article",
+      "outcome": "observed",
+      "detail": {
+        "requested_date": "2026-11-06",
+        "results": [
+          {
+            "source": "scrap.prokal",
+            "returned_date": "2020-01-01"
+          },
+          {
+            "source": "scrap.radartarakan",
+            "returned_date": "2020-01-01"
+          }
+        ]
+      },
+      "seconds": 0.001
+    },
+    {
+      "name": "graphql_repeated_page_is_not_stopped_or_deduplicated",
+      "outcome": "observed",
+      "detail": [
+        {
+          "source": "scrap.prokal",
+          "duplicate_detail_fetches": 3,
+          "stopped_by": "synthetic exception on fourth page"
+        },
+        {
+          "source": "scrap.radartarakan",
+          "duplicate_detail_fetches": 3,
+          "stopped_by": "synthetic exception on fourth page"
+        }
+      ],
+      "seconds": 0.002
+    },
+    {
+      "name": "benuanta_external_href_reaches_controlled_loopback",
+      "outcome": "observed",
+      "detail": {
+        "controlled_loopback_requests": 1,
+        "body_in_scraped_result": true,
+        "prerequisite": "control of remote index href or redirect destination"
+      },
+      "seconds": 0.533
+    },
+    {
+      "name": "remote_category_reaches_html_enabled_markdown",
+      "outcome": "observed",
+      "detail": {
+        "raw_markup_in_detail_sink": true,
+        "javascript_execution_tested": false
+      },
+      "seconds": 0.119
+    },
+    {
+      "name": "inactive_tabs_render_all_details_and_rebuild_excel",
+      "outcome": "observed",
+      "detail": {
+        "rows": 250,
+        "rendered_detail_expanders_with_table_selected": 250,
+        "excel_builds_over_two_runs": 2,
+        "excel_download_clicks": 0
+      },
+      "seconds": 0.833
+    }
+  ]
+}

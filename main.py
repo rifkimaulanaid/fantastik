@@ -1,503 +1,349 @@
-import os
-import re
-from datetime import date, datetime
-from io import BytesIO
+"""Streamlit UI; scraping, validation and export live in importable modules."""
+from copy import deepcopy
+from datetime import datetime
+import hashlib
+from html import escape
+import json
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
-import streamlit.components.v1 as components
 from PIL import Image
 
-from scrap.benuanta import benuanta_scrap
-from scrap.prokal import prokal_scrap
-from scrap.radartarakan import radar_scrap
+from helper.data import build_export_dataframe, dataframe_to_excel_bytes, filter_dataframe, format_date_column
+from helper.http_client import UnsafeURL, validate_url
+from helper.jobs import DEFAULT_STORE, ScrapeJob, list_checkpoints, load_checkpoint
+from helper.models import validate_dates
+from helper.pipeline import ACTIVE_SOURCES
+from helper.presentation import BUSINESS_ZONE, article_html, human_date, human_time, preset_dates, source_cards, status_label
 
-ACTIVE_SOURCES = {
-    "Benuanta": benuanta_scrap,
-    "Prokal": prokal_scrap,
-    "Radar Tarakan": radar_scrap,
-}
-
-DATE_STORAGE_FORMAT = "%Y-%m-%d"
-DATE_DISPLAY_FORMAT = "%d-%m-%Y"
-SUMMARY_MAX_CHARS = 320
-SUMMARY_MAX_SENTENCES = 2
-
-if "scraped_df" not in st.session_state:
-    st.session_state.scraped_df = None
-if "scrape_reports" not in st.session_state:
-    st.session_state.scrape_reports = []
-
-st.set_page_config(
-    page_title="Fantastik Bulungan",
-    page_icon=Image.open("./asset/LOGO-BPS.png"),
-    layout="wide",
-)
-
-
-def local_css(file_name):
-    if os.path.exists(file_name):
-        with open(file_name, encoding="utf-8") as file:
-            st.markdown(f"<style>{file.read()}</style>", unsafe_allow_html=True)
-    else:
-        st.warning(f"File CSS {file_name} tidak ditemukan.")
-
-
-def build_summary(text, max_sentences=SUMMARY_MAX_SENTENCES, max_chars=SUMMARY_MAX_CHARS):
-    """Create a short summary from article content using the leading sentences."""
-    normalized = " ".join(str(text or "").split())
-    if not normalized:
-        return None
-
-    sentences = re.split(r"(?<=[.!?])\s+", normalized)
-    selected = []
-    current_length = 0
-
-    for sentence in sentences:
-        sentence = sentence.strip()
-        if not sentence:
-            continue
-
-        selected.append(sentence)
-        current_length += len(sentence)
-        if len(selected) >= max_sentences or current_length >= max_chars:
-            break
-
-    summary = " ".join(selected).strip()
-    if len(summary) > max_chars:
-        summary = summary[:max_chars].rsplit(" ", 1)[0].rstrip(".,;:") + "..."
-
-    return summary or normalized[:max_chars]
-
-
-def enrich_scraped_data(rows):
-    """Add derived fields such as Ringkasan while keeping original full text intact."""
-    enriched_rows = []
-    for row in rows:
-        enriched_row = dict(row)
-        enriched_row["Ringkasan"] = build_summary(enriched_row.get("Isi"))
-        enriched_rows.append(enriched_row)
-    return enriched_rows
-
-
-def build_export_dataframe(df):
-    """Order export columns consistently while keeping all available data."""
-    preferred_order = ["Tanggal", "Sumber", "Tagar", "Judul", "Ringkasan", "Isi", "Tautan"]
-    ordered_columns = [column for column in preferred_order if column in df.columns]
-    remaining_columns = [column for column in df.columns if column not in ordered_columns]
-    ordered_df = df[ordered_columns + remaining_columns].copy()
-    return format_date_column(ordered_df)
-
-
-def dataframe_to_excel_bytes(df):
-    """Convert a DataFrame to an Excel file in memory."""
-    buffer = BytesIO()
-    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-        df.to_excel(writer, index=False, sheet_name="Berita")
-    buffer.seek(0)
-    return buffer.getvalue()
-
-
-def format_date_value(value):
-    """Convert YYYY-MM-DD values to DD-MM-YYYY for presentation."""
-    if value is None or value == "":
-        return value
-
-    text = str(value).strip()
-    for date_format in (DATE_STORAGE_FORMAT, DATE_DISPLAY_FORMAT):
-        try:
-            return datetime.strptime(text, date_format).strftime(DATE_DISPLAY_FORMAT)
-        except ValueError:
-            continue
-
-    return text
-
-
-def format_date_column(df):
-    """Return a copy with formatted Tanggal values for UI/export."""
-    formatted_df = df.copy()
-    if "Tanggal" in formatted_df.columns:
-        formatted_df["Tanggal"] = formatted_df["Tanggal"].apply(format_date_value)
-    return formatted_df
-
-
-def inject_ui_translations():
-    """Translate built-in Streamlit UI text that is not exposed in Python API."""
-    components.html(
-        """
-        <script>
-        const translateText = () => {
-            const root = window.parent.document;
-            if (!root) {
-                return;
-            }
-
-            root.querySelectorAll("div, span, label").forEach((node) => {
-                if (!node || node.children.length > 0) {
-                    return;
-                }
-
-                const text = node.textContent ? node.textContent.trim() : "";
-                if (text === "Select all") {
-                    node.textContent = "Pilih Semua";
-                }
-            });
-        };
-
-        translateText();
-        const observer = new MutationObserver(translateText);
-        observer.observe(window.parent.document.body, { childList: true, subtree: true });
-        </script>
-        """,
-        height=0,
-        width=0,
-    )
+ROOT = Path(__file__).resolve().parent
 
 
 def render_app_header():
-    source_pills = "".join(
-        f'<span class="source-pill">{source}</span>'
-        for source in ACTIVE_SOURCES
-    )
     st.markdown(
-        f"""
-        <section class="app-hero">
-            <div class="hero-copy">
-                <span class="eyebrow">Fenomena Statistik Kabupaten Bulungan</span>
-                <h1>Fantastik Bulungan</h1>
-                <p>
-                    Kumpulkan berita lokal dari beberapa portal media untuk mendukung
-                    pemantauan fenomena statistik menurut waktu, kategori, dan isi berita.
-                </p>
-                <div class="source-pill-row">{source_pills}</div>
-            </div>
-            <div class="hero-panel">
-                <h3>Alur Singkat</h3>
-                <ol>
-                    <li>Tentukan tanggal awal dan tanggal akhir di sidebar.</li>
-                    <li>Pilih satu atau beberapa sumber media aktif.</li>
-                    <li>Jalankan proses scraping lalu telaah hasil pada tabel dan detail berita.</li>
-                    <li>Unduh hasil akhir dalam format Excel jika diperlukan.</li>
-                </ol>
-            </div>
-        </section>
-        """,
+        '<header class="app-header"><div><span class="eyebrow">Fenomena Statistik Kabupaten Bulungan</span>'
+        '<h1>Fantastik Bulungan</h1><p>Berita lokal untuk membaca fenomena daerah.</p></div>'
+        '<span class="brand-mark" aria-hidden="true">F.</span></header>',
         unsafe_allow_html=True,
     )
 
 
-def render_metric_card(label, value, help_text):
-    st.markdown(
-        f"""
-        <div class="metric-card">
-            <div class="metric-label">{label}</div>
-            <div class="metric-value">{value}</div>
-            <div class="metric-help">{help_text}</div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
+def reset_result_filters():
+    st.session_state.result_keyword = ""
+    st.session_state.result_categories = []
+    st.session_state.article_position = 0
+
+
+def reset_article():
+    st.session_state.article_position = 0
+
+
+def change_preset():
+    dates = preset_dates(st.session_state.date_preset, datetime.now(BUSINESS_ZONE).date())
+    if dates:
+        st.session_state.collect_start, st.session_state.collect_end = dates
+
+
+def custom_dates():
+    st.session_state.date_preset = "Atur tanggal"
+
+
+def adopt_result(result):
+    old = st.session_state.get("active_result")
+    if old and old.get("data") and old != result:
+        history = st.session_state.get("run_history", [])
+        st.session_state.run_history = ([deepcopy(old)] + history)[:3]
+    st.session_state.active_result = deepcopy(result)
+    st.session_state.export_cache = None
+    # Apply widget resets on the next full run, including completion from a fragment.
+    st.session_state.reset_results_pending = True
+
+
+@st.fragment(run_every="1s")
+def monitor_job():
+    job = st.session_state.get("job")
+    if job is None:
+        return
+    fraction, note, result = job.snapshot()
+    st.progress(fraction, text=note)
+    if result:
+        st.caption(f"{len(result['data'])} berita diperoleh. Hasil disimpan bertahap.")
+    if job.storage_error:
+        st.warning("Hasil belum dapat disimpan pada perangkat. Data tetap tersedia dalam sesi ini.")
+        st.text(job.storage_error)
+    if not job.done.is_set():
+        if st.button("Batalkan proses", disabled=job.cancel.is_set(), key="cancel_job"):
+            job.cancel.set()
+            st.rerun()
+        if job.cancel.is_set():
+            st.caption("Pembatalan diminta. Menunggu pengambilan halaman yang sedang berlangsung selesai.")
+        return
+    st.session_state.last_attempt = result
+    st.session_state.last_job_error = job.error or job.storage_error
+    if result and (result["data"] or all(r["status"] == "success" for r in result["reports"])):
+        adopt_result(result)
+    st.session_state.job = None
+    st.rerun()
+
+
+def render_sidebar():
+    with st.sidebar:
+        st.image(str(ROOT / "asset/Fantastik_Logo_Teks.png"), width=132)
+        st.caption("Pantau berita lokal, telaah fenomena, dan simpan hasilnya.")
+        with st.expander("Panduan singkat"):
+            st.write("1. Buka **Kumpulkan berita** dan pilih tanggal serta sumber.")
+            st.write("2. Cari berita melalui tabel atau baca pada tampilan Detail.")
+            st.write("3. Pilih Unduh dan siapkan berkas sesuai filter hasil.")
+            st.caption("Hasil parsial berarti sebagian berita atau sumber belum berhasil dikumpulkan.")
+        history = st.session_state.get("run_history", [])
+        if history:
+            with st.expander("Hasil sebelumnya"):
+                selected = st.selectbox(
+                    "Pilih hasil sebelumnya", range(len(history)), key="history_selection",
+                    format_func=lambda i: f"{human_time(history[i]['metadata'].get('started_at'))} ({len(history[i]['data'])} berita)",
+                )
+                if st.button("Tampilkan hasil sebelumnya"):
+                    adopt_result(history[selected])
+        files = list_checkpoints(DEFAULT_STORE)[:20]
+        if files:
+            with st.expander("Hasil tersimpan di perangkat"):
+                def file_label(path):
+                    try:
+                        stamp = datetime.fromtimestamp(path.stat().st_mtime, BUSINESS_ZONE)
+                        return f"{human_time(stamp)} ({stamp:%S} detik)"
+                    except OSError:
+                        return "Berkas tidak tersedia"
+
+                path = st.selectbox("Pilih hasil tersimpan", files, format_func=file_label, key="saved_selection")
+                if st.button("Pulihkan hasil tersimpan"):
+                    try:
+                        adopt_result(load_checkpoint(path))
+                    except (OSError, ValueError, KeyError) as error:
+                        st.error("Hasil tersimpan belum dapat dibuka.")
+                        st.text(str(error))
+                st.caption("Pemulihan membuka data yang sudah tersimpan dan tidak mengulang pengumpulan berita.")
+
+
+def render_collection_filters():
+    today = datetime.now(BUSINESS_ZONE).date()
+    defaults = dict(collect_start=today, collect_end=today, date_preset="Hari ini",
+                    collect_sources=list(ACTIVE_SOURCES))
+    for key, value in defaults.items():
+        if key not in st.session_state:
+            st.session_state[key] = value
+    busy = st.session_state.get("job") is not None
+    expanded = st.session_state.get("active_result") is None and not busy
+    with st.expander("Kumpulkan berita", expanded=expanded, key="collection_panel"):
+        st.caption("Filter pengambilan: menentukan berita baru yang akan dikumpulkan.")
+        with st.container(horizontal=True, vertical_alignment="bottom", key="collection_dates"):
+            st.selectbox("Rentang tanggal", ["Hari ini", "7 hari", "30 hari", "Atur tanggal"],
+                         key="date_preset", on_change=change_preset, disabled=busy, width="stretch")
+            start = st.date_input("Tanggal awal", key="collect_start", format="DD-MM-YYYY",
+                                  on_change=custom_dates, disabled=busy, width="stretch")
+            end = st.date_input("Tanggal akhir", key="collect_end", format="DD-MM-YYYY",
+                                on_change=custom_dates, disabled=busy, width="stretch")
+        sources = st.multiselect("Sumber media", list(ACTIVE_SOURCES), key="collect_sources",
+                                 placeholder="Pilih sumber media", disabled=busy)
+        validation = None
+        try:
+            validate_dates(start, end)
+        except ValueError as error:
+            validation = str(error)
+            st.error(validation)
+        if not sources:
+            st.info("Pilih setidaknya satu sumber media untuk mulai mengumpulkan berita.")
+        clicked = st.button("Kumpulkan berita", key="collect_news", type="primary", width="stretch",
+                            disabled=busy or bool(validation) or not sources)
+        st.caption("Maksimal 31 hari setiap pengambilan. Proses dapat dibatalkan dan hasil yang sudah diperoleh tetap disimpan.")
+        if clicked:
+            try:
+                job = ScrapeJob(start, end, sources)
+                job.start()
+                st.session_state.job = job
+                st.session_state.last_attempt = None
+                st.session_state.last_job_error = None
+                st.rerun()
+            except (ValueError, RuntimeError) as error:
+                st.error(str(error))
 
 
 def render_status_reports(reports):
-    if not reports:
+    st.markdown(source_cards(reports), unsafe_allow_html=True)
+
+
+def render_diagnostics(result):
+    details = st.expander("Rincian pengambilan dan kendala", on_change="rerun", key="source_details")
+    if not details.open:
         return
-
-    st.markdown("### Status Sumber")
-    columns = st.columns(len(reports))
-    for column, report in zip(columns, reports):
-        status_class = f"status-{report['status']}"
-        if report["status"] == "error":
-            detail = report["message"] or "Gagal diproses."
-        elif report["count"] == 0:
-            detail = "Tidak ada berita pada rentang tanggal ini."
-        else:
-            detail = f"{report['count']} berita berhasil dikumpulkan."
-
-        with column:
-            st.markdown(
-                f"""
-                <div class="status-card {status_class}">
-                    <div class="status-source">{report["source"]}</div>
-                    <div class="status-detail">{detail}</div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
+    with details:
+        for report in result["reports"]:
+            st.text(f"{report['source']} - {status_label(report['status'])}: {report['count']} berita; "
+                    f"{report.get('missing_body', 0)} tanpa isi; {report.get('pages', 0)} halaman.")
+            if report.get("message"):
+                st.text(report["message"])
+            if report.get("issues"):
+                st.dataframe(pd.DataFrame(report["issues"]), hide_index=True, width="stretch")
+        st.caption("Batas per sumber: 200 halaman, 1.000 entri, 8 juta karakter isi, dan target durasi 3 menit. "
+                   "Pembatalan diperiksa di antara operasi pengambilan halaman.")
+        st.json(result["metadata"], expanded=False)
 
 
-def render_empty_state():
-    st.markdown(
-        """
-        <section class="empty-state">
-            <h3>Belum Ada Hasil Scraping</h3>
-            <p>
-                Atur filter pada sidebar, pilih sumber media yang dibutuhkan, lalu klik
-                <strong>Proses</strong> untuk menampilkan hasil scraping.
-            </p>
-        </section>
-        """,
-        unsafe_allow_html=True,
-    )
+def move_article(offset):
+    st.session_state.article_position += offset
 
 
-local_css("styles/style.css")
-
-
-def scrape_news(start_date, end_date, selected_sources, progress_bar=None, progress_note=None):
-    all_data = []
-    source_reports = []
-    total_sources = max(len(selected_sources), 1)
-
-    for index, source in enumerate(selected_sources):
-        scraper = ACTIVE_SOURCES[source]
-
-        def update_source_progress(local_progress, detail):
-            if progress_bar is None:
-                return
-
-            bounded_local_progress = max(0.0, min(local_progress, 1.0))
-            absolute_progress = int(
-                round(((index + bounded_local_progress) / total_sources) * 100)
-            )
-            progress_bar.progress(
-                min(absolute_progress, 100),
-                text=f"{source}: {detail}",
-            )
-            if progress_note is not None:
-                progress_note.markdown(
-                    f"""
-                    <div class="progress-note">
-                        <strong>{source}</strong><br>
-                        {detail}
-                    </div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-
-        try:
-            update_source_progress(0.03, "Memulai proses scraping.")
-            source_data = scraper(
-                start_date,
-                end_date,
-                progress_callback=update_source_progress,
-            )
-            all_data.extend(source_data)
-            source_reports.append(
-                {
-                    "source": source,
-                    "status": "success",
-                    "count": len(source_data),
-                    "message": None,
-                }
-            )
-        except Exception as error:
-            error_message = str(error)
-            print(f"[ERROR] Scraping failed for {source}: {error_message}")
-            update_source_progress(1.0, "Gagal diproses.")
-            source_reports.append(
-                {
-                    "source": source,
-                    "status": "error",
-                    "count": 0,
-                    "message": error_message,
-                }
-            )
-
-    all_data.sort(
-        key=lambda item: (
-            item.get("Tanggal", ""),
-            item.get("Judul", ""),
-        ),
-        reverse=True,
-    )
-
-    result = {
-        "data": enrich_scraped_data(all_data),
-        "reports": source_reports,
-    }
-    if progress_bar is not None:
-        progress_bar.progress(100, text="Scraping selesai.")
-    if progress_note is not None:
-        total_articles = len(result["data"])
-        progress_note.markdown(
-            f"""
-            <div class="progress-note progress-note-complete">
-                <strong>Scraping selesai</strong><br>
-                Total {total_articles} berita berhasil dikumpulkan dari {len(selected_sources)} sumber.
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    return result
-
-
-with st.sidebar:
-    st.image("./asset/Fantastik_Logo_Teks.png", use_container_width=True)
-    st.markdown("## Filter Scraping")
-    st.caption("Tentukan rentang tanggal dan sumber berita yang ingin diproses.")
-    start_date = st.date_input("Tanggal Awal", date.today(), format="DD-MM-YYYY")
-    end_date = st.date_input("Tanggal Akhir", date.today(), format="DD-MM-YYYY")
-    news_sources = st.multiselect(
-        "Sumber Media",
-        list(ACTIVE_SOURCES),
-        placeholder="Pilih sumber media",
-    )
-    process_clicked = st.button("Proses", use_container_width=True)
-
-    st.markdown(
-        """
-        <div class="sidebar-note">
-            <strong>Catatan</strong><br>
-            Proses scraping dapat memerlukan beberapa menit jika jumlah berita pada
-            rentang tanggal yang dipilih cukup banyak.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-
-
-render_app_header()
-inject_ui_translations()
-progress_bar_placeholder = st.empty()
-progress_note_placeholder = st.empty()
-
-if start_date > end_date:
-    st.error("Tanggal awal tidak boleh lebih dari tanggal akhir.")
-elif process_clicked and not news_sources:
-    st.warning("Silakan pilih minimal satu sumber media.")
-elif process_clicked:
-    progress_bar = progress_bar_placeholder.progress(0, text="Menyiapkan proses scraping...")
-    scrape_result = scrape_news(
-        start_date,
-        end_date,
-        news_sources,
-        progress_bar=progress_bar,
-        progress_note=progress_note_placeholder,
-    )
-    scraped_data = scrape_result["data"]
-    st.session_state.scrape_reports = scrape_result["reports"]
-
-    if scraped_data:
-        st.session_state.scraped_df = pd.DataFrame(scraped_data)
+def render_article(shown):
+    position = st.session_state.get("article_position", 0)
+    if position not in range(len(shown)):
+        st.session_state.article_position = 0
+    with st.container(horizontal=True, vertical_alignment="bottom", key="article_navigation"):
+        st.button("Sebelumnya", key="previous_article", on_click=move_article, args=(-1,),
+                  disabled=st.session_state.get("article_position", 0) == 0)
+        st.selectbox("Pilih berita", range(len(shown)), key="article_position", width="stretch",
+                     format_func=lambda i: f"{i + 1}. {shown.iloc[i].get('Judul', 'Tanpa judul')}")
+        st.button("Berikutnya", key="next_article", on_click=move_article, args=(1,),
+                  disabled=st.session_state.get("article_position", 0) == len(shown) - 1)
+    record = shown.iloc[st.session_state.article_position]
+    st.caption(f"Berita {st.session_state.article_position + 1} dari {len(shown)}")
+    # Values from news sources are escaped individually before enabling HTML.
+    st.markdown(f'<h2 class="article-title">{escape(str(record.get("Judul", "Tanpa judul")))}</h2>', unsafe_allow_html=True)
+    st.text(f"{record.get('Sumber', '-')} | Kategori: {record.get('Tagar', '-')} | {human_date(record.get('Tanggal'))}")
+    if record.get("Ringkasan"):
+        with st.container(key="article_summary"):
+            st.caption("Sekilas berita - kalimat awal artikel")
+            st.text(record["Ringkasan"])
+    if record.get("Isi"):
+        st.markdown(article_html(None, record["Isi"]), unsafe_allow_html=True)
     else:
-        st.session_state.scraped_df = None
+        st.warning("Isi berita belum berhasil diambil. Periksa rincian kendala atau buka artikel sumber.")
+    try:
+        st.link_button("Buka artikel sumber", validate_url(record.get("Tautan")))
+    except UnsafeURL:
+        st.caption("Tautan artikel tidak tersedia.")
 
 
-if st.session_state.scrape_reports:
-    render_status_reports(st.session_state.scrape_reports)
-    has_errors = any(report["status"] == "error" for report in st.session_state.scrape_reports)
-    total_results = sum(report["count"] for report in st.session_state.scrape_reports)
-    if total_results == 0 and has_errors:
-        st.warning("Scraping selesai, tetapi ada sumber yang gagal diproses.")
-    elif total_results == 0:
-        st.info("Tidak ada berita yang cocok dengan rentang tanggal yang dipilih.")
-
-
-if st.session_state.scraped_df is None:
-    render_empty_state()
-else:
-    df = st.session_state.scraped_df.copy()
-
-    filter_col1, filter_col2 = st.columns([2.4, 1.6])
-    with filter_col1:
-        keyword = st.text_input("Cari kata kunci dalam Judul atau Isi", value="")
-    with filter_col2:
-        if "Tagar" in df.columns:
-            categories = sorted(df["Tagar"].dropna().unique().tolist())
-            selected_categories = st.multiselect("Filter kategori", categories)
-        else:
-            selected_categories = []
-
-    filtered_df = df.copy()
-
-    if keyword:
-        keyword = keyword.lower()
-        filtered_df = filtered_df[
-            filtered_df["Judul"].str.lower().str.contains(keyword, na=False)
-            | filtered_df["Tagar"].str.lower().str.contains(keyword, na=False)
-            | filtered_df.get("Isi", pd.Series(index=filtered_df.index, dtype="object"))
-            .str.lower()
-            .str.contains(keyword, na=False)
-        ]
-
-    if selected_categories:
-        filtered_df = filtered_df[filtered_df["Tagar"].isin(selected_categories)]
-
-    presented_df = format_date_column(filtered_df)
-    unique_sources = filtered_df["Sumber"].nunique() if "Sumber" in filtered_df.columns else 0
-    unique_categories = filtered_df["Tagar"].dropna().nunique() if "Tagar" in filtered_df.columns else 0
-
-    metric_col1, metric_col2, metric_col3 = st.columns(3)
-    with metric_col1:
-        render_metric_card("Total Berita", len(filtered_df), "Jumlah berita setelah filter diterapkan.")
-    with metric_col2:
-        render_metric_card("Sumber Aktif", unique_sources, "Sumber media yang berkontribusi pada hasil saat ini.")
-    with metric_col3:
-        render_metric_card("Kategori", unique_categories, "Jumlah kategori atau tagar yang muncul pada hasil.")
-
-    tabs = st.tabs(["Tabel", "Detail", "Unduh"])
-
-    with tabs[0]:
-        st.markdown("### Hasil Tabel")
-        display_columns = [
-            column
-            for column in ["Tanggal", "Sumber", "Tagar", "Judul", "Ringkasan", "Tautan"]
-            if column in presented_df.columns
-        ]
-        display_df = presented_df[display_columns].copy()
-        st.dataframe(
-            display_df,
-            use_container_width=True,
-            hide_index=True,
-            column_config={
-                "Tautan": st.column_config.LinkColumn("Tautan"),
-                "Ringkasan": st.column_config.TextColumn("Ringkasan", width="large"),
-                "Judul": st.column_config.TextColumn("Judul", width="large"),
-            },
-        )
-
-    with tabs[1]:
-        st.markdown("### Detail Berita")
-        if presented_df.empty:
-            st.info("Tidak ada berita yang cocok dengan filter pencarian.")
-        else:
-            for _, row in presented_df.iterrows():
-                expander_title = f"{row.get('Tanggal', '-')} | {row.get('Judul', '-')}"
-                with st.expander(expander_title):
-                    meta_col1, meta_col2 = st.columns([1.1, 2.4])
-                    with meta_col1:
-                        st.markdown(
-                            f"""
-                            <div class="detail-meta-card">
-                                <div><strong>Sumber</strong><br>{row.get("Sumber", "-")}</div>
-                                <div><strong>Tagar</strong><br>{row.get("Tagar", "-")}</div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True,
-                        )
-                    with meta_col2:
-                        if row.get("Ringkasan"):
-                            st.markdown("**Ringkasan**")
-                            st.write(row.get("Ringkasan"))
-                        st.markdown(f"**Tautan**: [{row.get('Tautan', '-')}]({row.get('Tautan', '#')})")
-                    st.markdown("**Isi Berita**")
-                    st.write(row.get("Isi") or "-")
-
-    with tabs[2]:
-        st.markdown("### Unduh Hasil")
-        export_df = build_export_dataframe(filtered_df)
-        st.write(
-            "Unduhan Excel akan mengikuti hasil yang sedang tampil setelah filter kata kunci dan kategori diterapkan."
-        )
+def render_downloads(filtered, result, keyword, categories):
+    st.write(f"Unduh **{len(filtered)} berita** sesuai filter hasil saat ini.")
+    st.caption("Excel menyertakan keterangan pengambilan dan kendala sumber. JSON menyimpan data lengkap untuk diolah kembali.")
+    export_meta = dict(result["metadata"], filter_keyword=keyword, filter_categories=categories,
+                       exported_rows=len(filtered))
+    payload = json.dumps(dict(data=filtered.to_dict("records"), metadata=export_meta,
+                              reports=result["reports"]), ensure_ascii=True)
+    signature = hashlib.sha256(payload.encode()).hexdigest()
+    cache = st.session_state.get("export_cache")
+    if cache and cache["signature"] != signature:
+        st.info("Filter hasil berubah. Siapkan ulang unduhan agar berkas mengikuti hasil yang sedang ditampilkan.")
+    if st.button("Siapkan unduhan", key="prepare_download", type="primary", disabled=filtered.empty):
         try:
-            excel_bytes = dataframe_to_excel_bytes(export_df)
-            st.download_button(
-                "Download Excel",
-                excel_bytes,
-                "fantastik.xlsx",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
-        except ModuleNotFoundError:
-            st.info("Download Excel membutuhkan package `openpyxl`.")
+            with st.spinner("Menyiapkan berkas unduhan..."):
+                excel = dataframe_to_excel_bytes(build_export_dataframe(filtered), export_meta, result["reports"])
+            cache = dict(signature=signature, excel=excel, json=payload.encode())
+            st.session_state.export_cache = cache
+        except Exception as error:
+            st.error("Berkas belum dapat disiapkan. Hasil berita tetap tersedia.")
+            st.caption(f"Kode kendala: {type(error).__name__}")
+    if cache and cache["signature"] == signature:
+        with st.container(horizontal=True):
+            st.download_button("Unduh Excel", cache["excel"], "fantastik.xlsx",
+                               "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", on_click="ignore")
+            st.download_button("Unduh JSON lengkap", cache["json"], "fantastik.json", "application/json", on_click="ignore")
+    with st.expander("Tentang format unduhan"):
+        st.write("Teks panjang dalam Excel dilanjutkan pada sheet Teks Lanjutan. Cara membacanya dan "
+                 "penulisan karakter khusus dijelaskan pada sheet Metadata. JSON mempertahankan teks asli.")
+
+
+def render_results(result):
+    if st.session_state.pop("reset_results_pending", False):
+        reset_result_filters()
+    metadata = result["metadata"]
+    complete = metadata.get("state") == "complete"
+    label = "Lengkap" if complete else "Belum lengkap"
+    state_class = "complete" if complete else "incomplete"
+    date_range = f"{human_date(metadata.get('requested_start'))} - {human_date(metadata.get('requested_end'))}"
+    st.markdown(
+        f'<section class="results-heading"><h2>Hasil berita</h2><span class="result-badge {state_class}">{label}</span>'
+        f'<p>{escape(date_range)} · Diambil {escape(human_time(metadata.get("started_at")))}</p></section>',
+        unsafe_allow_html=True,
+    )
+    render_status_reports(result["reports"])
+    if not result["data"]:
+        st.info("Tidak ada berita pada rentang yang berhasil diperiksa. Coba tanggal atau sumber lain melalui Kumpulkan berita.")
+        render_diagnostics(result)
+        return
+    df = pd.DataFrame(result["data"])
+    available = sorted(df["Tagar"].dropna().astype(str).unique()) if "Tagar" in df else []
+    if "result_categories" in st.session_state:
+        st.session_state.result_categories = [c for c in st.session_state.result_categories if c in available]
+    with st.container(horizontal=True, vertical_alignment="bottom", key="result_filters"):
+        keyword = st.text_input("Cari dalam hasil", key="result_keyword", on_change=reset_article,
+                                placeholder="Judul, kategori, atau isi berita", width="stretch")
+        categories = st.multiselect("Kategori", available, key="result_categories", on_change=reset_article,
+                                     placeholder="Semua kategori", width="stretch")
+        if keyword or categories:
+            st.button("Hapus filter", key="clear_filters", on_click=reset_result_filters)
+    filtered = filter_dataframe(df, keyword, categories)
+    shown = format_date_column(filtered)
+    sources = filtered["Sumber"].nunique() if "Sumber" in filtered else 0
+    category_count = filtered["Tagar"].nunique() if "Tagar" in filtered else 0
+    st.markdown(
+        f'<dl class="result-metrics"><div><dt>Berita sesuai filter</dt><dd>{len(filtered)}</dd></div>'
+        f'<div><dt>Sumber dengan hasil</dt><dd>{sources}</dd></div><div><dt>Kategori</dt><dd>{category_count}</dd></div></dl>',
+        unsafe_allow_html=True,
+    )
+    view = st.radio("Tampilan hasil", ["Tabel", "Detail", "Unduh"], horizontal=True, key="result_view", label_visibility="collapsed")
+    if shown.empty:
+        st.info("Tidak ada berita yang cocok. Ubah kata kunci/kategori atau pilih Hapus filter.")
+    if view == "Tabel" and not shown.empty:
+        display_columns = [c for c in ["Judul", "Tanggal", "Sumber", "Tagar", "Ringkasan", "Status Isi", "Tautan"] if c in shown]
+        safe = shown[display_columns].copy()
+        if "Tautan" in safe:
+            def safe_link(value):
+                try:
+                    return validate_url(value)
+                except UnsafeURL:
+                    return None
+            safe["Tautan"] = safe["Tautan"].map(safe_link)
+        st.dataframe(safe, hide_index=True, width="stretch", key="news_table",
+                     column_config={"Tagar": st.column_config.TextColumn("Kategori"),
+                                    "Tautan": st.column_config.LinkColumn("Sumber asli", display_text="Buka artikel"),
+                                    "Judul": st.column_config.TextColumn("Judul", width="large"),
+                                    "Ringkasan": st.column_config.TextColumn("Sekilas berita", width="large")})
+    elif view == "Detail" and not shown.empty:
+        render_article(shown)
+    elif view == "Unduh":
+        render_downloads(filtered, result, keyword, categories)
+    render_diagnostics(result)
+
+
+def main():
+    with Image.open(ROOT / "asset/LOGO-BPS.png") as icon:
+        st.set_page_config(page_title="Fantastik Bulungan", page_icon=icon.copy(), layout="wide")
+    st.markdown("<style>" + (ROOT / "styles/style.css").read_text(encoding="utf-8") + "</style>", unsafe_allow_html=True)
+    render_sidebar()
+    render_app_header()
+    render_collection_filters()
+    monitor_job()
+    if st.session_state.get("last_job_error"):
+        st.error("Pengambilan terbaru mengalami kendala. Data yang sudah tersedia tetap dipertahankan.")
+        with st.expander("Rincian kendala proses"):
+            st.text(st.session_state.last_job_error)
+    active = st.session_state.get("active_result")
+    attempt = st.session_state.get("last_attempt")
+    if attempt and active != attempt and not attempt.get("data"):
+        st.warning("Pengambilan terbaru belum berhasil. Anda sedang melihat hasil sebelumnya.")
+        with st.expander("Status pengambilan terbaru"):
+            render_status_reports(attempt["reports"])
+            for report in attempt["reports"]:
+                if report.get("message"):
+                    st.text(report["message"])
+    if active:
+        if st.session_state.get("job"):
+            st.caption("Pengambilan baru sedang berlangsung. Hasil di bawah berasal dari pengambilan sebelumnya.")
+        render_results(active)
+    elif not st.session_state.get("job"):
+        st.info("Pilih tanggal dan sumber pada Kumpulkan berita untuk mulai. Hasil akan tampil di sini.")
+
+
+if __name__ == "__main__":
+    main()
